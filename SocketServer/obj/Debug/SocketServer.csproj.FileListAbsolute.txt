@@ -1,0 +1,1 @@
+c:\users\james\documents\visual studio 2012\Projects\SocketServer\SocketServer\bin\Debug\SocketServer.exe.config

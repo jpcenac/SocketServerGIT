@@ -1,0 +1,13 @@
+C:\Users\James\documents\visual studio 2012\Projects\SocketServer\Client\bin\Debug\Client.exe.config
+C:\Users\James\documents\visual studio 2012\Projects\SocketServer\Client\bin\Debug\Client.exe
+C:\Users\James\documents\visual studio 2012\Projects\SocketServer\Client\bin\Debug\Client.pdb
+C:\Users\James\documents\visual studio 2012\Projects\SocketServer\Client\bin\Debug\ServerData.dll
+C:\Users\James\documents\visual studio 2012\Projects\SocketServer\Client\bin\Debug\ServerData.pdb
+C:\Users\James\documents\visual studio 2012\Projects\SocketServer\Client\obj\Debug\Client.exe
+C:\Users\James\documents\visual studio 2012\Projects\SocketServer\Client\obj\Debug\Client.pdb
+C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Client\bin\Debug\Client.exe.config
+C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Client\bin\Debug\Client.exe
+C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Client\bin\Debug\Client.pdb
+C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Client\obj\Debug\Client.exe
+C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Client\obj\Debug\Client.pdb
+C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Client\obj\Debug\Client.csprojResolveAssemblyReference.cache
