@@ -12,31 +12,31 @@ namespace Client
 {
     class Client
     {
+        public static Socket listenerSocket;
         public static Socket master;
         public static string id;
         public static List<string> myFiles = new List<string>();
-        public static Socket mySocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-       
+
+
         //public static Dictionary<string, FileData> clientFiles = new Dictionary<string,string>();
 
         static void Main(string[] args)
         {
-
+            listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             id = Guid.NewGuid().ToString();
-            
+
 
             //get filenames
             string[] fileNames = Directory.GetFiles("C:\\Users\\jpc0759.GAMELAB\\Documents\\HostFiles", "*.txt")
                                      .Select(path => Path.GetFileName(path))
                                      .ToArray();
-            foreach(string fn in fileNames)
+            foreach (string fn in fileNames)
             {
                 Console.WriteLine(fn);
             }
-            
-            Console.Read();
 
-            
+
+
             Console.Write("Enter server IP: ");
             //string connectIP = Console.ReadLine();
             string connectIP = "130.70.82.148";
@@ -46,75 +46,74 @@ namespace Client
             IPEndPoint ip = new IPEndPoint(IPAddress.Parse(connectIP), 30000);
 
             Random randPort = new Random();
-            int myPort = randPort.Next(30000, 30030);
+            int myPort = randPort.Next(30000, 30500);
             //int myPort = 30001;
-            string myIPString = IPAddress.Parse("130.70.82.148").ToString();
+            string myIPString = GetLocalIPAddress();
             IPEndPoint myPeerIP = new IPEndPoint(IPAddress.Parse("130.70.82.148"), myPort);
 
+            listenerSocket.Bind(myPeerIP);
 
+            Thread serveClient = new Thread(ListenThread);
+            serveClient.Start();
+
+            Retry:
             try
             {
-                Console.WriteLine("Attempting to connect");
                 Console.WriteLine("My Port is: " + myPort);
                 master.Connect(ip);
-
+                Console.WriteLine("Connect Successful");
             }
             catch
             {
                 Console.WriteLine("ERROR! Could not connect to host");
-
+                goto Retry;
             }
 
             //send stuff
             try
             {
-                
                 CSendFileInfo(myPort, myIPString, fileNames);
                 Console.WriteLine("Retreive FileInfo from Server = R ");
                 Console.WriteLine("Update your FileInfo to Server = U");
                 Console.WriteLine("Download file from server's Clients = D");
-                
+
                 IPEndPoint myHostingIP = new IPEndPoint(IPAddress.Parse(myIPString), myPort);
                 string input = string.Empty;
-                mySocket.Bind(myHostingIP);
 
-                while(true)
+                while (true)
                 {
-                    Console.WriteLine("Binding IP");
-                    
+                    Console.WriteLine("Input: ");
                     input = Console.ReadLine();
-                    mySocket.Listen(0);
-                    switch(input)
+                    switch (input)
                     {
                         case "r":
                         case "R":
-                            
                             SocketSendString(master, "RequestFileList");
                             int fileCount = int.Parse(Data_Receive2(master));
                             Console.WriteLine("Receiving " + fileCount.ToString() + " filenames from Master Server");
-                            for (int i = 0; i < fileCount; i++ )
+                            for (int i = 0; i < fileCount; i++)
                             {
                                 string fileName = Data_Receive2(master);
                                 Console.WriteLine(fileName);
                             }
-                                break;
+
+                            break;
                         case "d":
                         case "D":
-                               
-                                SocketSendString(master, "DownloadFile");
-                                string output = Data_Receive2(master);
-                                Console.WriteLine(output);
-                                string fileRequest = Console.ReadLine();
-                                SocketSendString(master, fileRequest);
-                                Console.WriteLine("Retriving File Owner");
-                                string HostID = Data_Receive2(master);
-                                string HostIP = Data_Receive2(master);
-                                string HostPort = Data_Receive2(master);
-                                Console.WriteLine("HostInfo: " + HostID + " " + HostIP + " " + HostPort);
-                                Thread DownloadThread = new Thread(()=>DownloadFileFromHost(HostID, HostIP, HostPort));
-                                
-                                break;
-                       
+
+                            SocketSendString(master, "DownloadFile");
+                            string output = Data_Receive2(master);
+                            Console.WriteLine(output);
+                            string fileRequest = Console.ReadLine();
+                            SocketSendString(master, fileRequest);
+                            Console.WriteLine("Retriving File Owner");
+                            string HostID = Data_Receive2(master);
+                            string HostIP = Data_Receive2(master);
+                            string HostPort = Data_Receive2(master);
+                            Console.WriteLine("HostInfo: " + HostID + " " + HostIP + " " + HostPort);
+                            Thread DownloadThread = new Thread(() => DownloadFileFromHost(HostID, HostIP, HostPort, fileRequest));
+                            DownloadThread.Start();
+                            break;
                     }
                 }
             }
@@ -124,18 +123,19 @@ namespace Client
 
         public static void ListenThread()
         {
+            Socket serverSocket;
             Console.WriteLine("ListenThread Started");
-            while(true)
+            while (true)
             {
-                mySocket.Listen(0);
-                if(mySocket.Accept() != null)
+                listenerSocket.Listen(0);
+                serverSocket = listenerSocket.Accept();
+                string successRec = Data_Receive2(serverSocket);
+                if(successRec == "RequestingFile")
                 {
-                    Console.WriteLine("Downloader Connected");
+                    Console.WriteLine("Successful Request");
+                    SocketSendString(serverSocket, "RequestAccepted");
                 }
-                else
-                {
-                    Console.WriteLine("Null point");
-                }
+
             }
         }
 
@@ -164,7 +164,7 @@ namespace Client
                 {
 
                     //Console.WriteLine("Read {0} bytes from socket. \n Data : {1}",
-                   // clientData.Length, clientData);
+                    // clientData.Length, clientData);
                     break;
                 }
             }
@@ -187,7 +187,7 @@ namespace Client
             SocketSendString(master, fileNames.Count().ToString());
             while (index < fileNames.Count())
             {
-                Console.WriteLine("FileName "  + fileNames[index] + " is being Sent");
+                Console.WriteLine("FileName " + fileNames[index] + " is being Sent");
                 //Console.WriteLine(myFiles[0]);
 
                 SocketSendString(master, fileNames[index]);
@@ -211,16 +211,46 @@ namespace Client
             }
         }
 
-        public static void ConnectToHost()
+        public static void DownloadFileFromHost(string hostID, string hostIP, string hostPort, string fileName)
         {
+            Socket ReceiverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            Console.WriteLine("Downloading from Host Client Started");
+            Console.WriteLine("ClientHostID: " + hostID);
 
-        }
-
-        public static void DownloadFileFromHost(string hostID, string hostIP, string hostPort)
-        {
+            string trueID = hostID;
+            string trueIP = hostIP;
             int truePort = int.Parse(hostPort);
-            
+            string trueFileName = fileName;
 
+            IPEndPoint hostIPEndPoint = new IPEndPoint(IPAddress.Parse(trueIP), truePort);
+            ReceiverSocket.Connect(hostIPEndPoint);
+            SocketSendString(ReceiverSocket, "RequestingFile");
+            string acceptRetrieval = Data_Receive2(ReceiverSocket);
+            //Console.WriteLine(acceptRetrieval);
         }
+
+        public static string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new Exception("IP was not found");
+        }
+
+
+
+        //public static Thread ExampleRequester(Socket RequesterSocket)
+        //{
+
+        //}
     }
+
+
+
+
 }

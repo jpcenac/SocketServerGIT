@@ -25,9 +25,8 @@ namespace Server
 
             listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
            
-
             //IPAddress = System.Net.IPAddress.Parse(Server);
-            IPEndPoint serverIP = new IPEndPoint(IPAddress.Parse("130.70.82.148"), 30000);
+            IPEndPoint serverIP = new IPEndPoint(IPAddress.Parse(GetLocalIPAddress()), 30000);
             listenerSocket.Bind(serverIP);
             Console.WriteLine(serverIP.ToString());
 
@@ -78,6 +77,19 @@ namespace Server
                 }
             }
             return clientData.Split(new string[]{"<EOF>"}, StringSplitOptions.None)[0];
+        }
+
+        public static string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new Exception("IP was not found");
         }
 
         class ClientData
@@ -132,7 +144,6 @@ namespace Server
                             Console.WriteLine("Sending port: " + clientInfo.Item3.ToString());
                             SocketSendString(clientSocket, clientInfo.Item3.ToString());
 
-
                             break;
                         default:
                             Console.WriteLine("Default Case");
@@ -140,7 +151,6 @@ namespace Server
                             break;
                     }
                 }
-                
             }
 
             public void AcceptFileInfo()
