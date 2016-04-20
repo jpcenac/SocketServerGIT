@@ -21,7 +21,7 @@ namespace Server
         static void Main(string[] args)
         {
             masterDB = new Dictionary<string, List<Tuple<string, string, int>>>();
-            Console.Write("Starting server: ");
+            Console.Write("Starting server on: ");
 
             listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
            
@@ -48,9 +48,16 @@ namespace Server
 
         public static void SocketSendString(Socket inSock, string input)
         {
-            //Console.WriteLine("Sending: " + input);            
-            input = input + "<EOF>";
-            inSock.Send(Encoding.ASCII.GetBytes(input));
+            try
+            {
+                //Console.WriteLine("Sending: " + input);            
+                input = input + "<EOF>";
+                inSock.Send(Encoding.ASCII.GetBytes(input));
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         //with flag
@@ -60,23 +67,31 @@ namespace Server
             Socket clientSocket = (Socket)cSocket;
             byte[] Buffer;
             
-            
-            // while there's data to accept
-            while (true)
+            try
             {
-                Buffer = new Byte[1024];
-                int received = clientSocket.Receive(Buffer);
-                // decode data sent
-                clientData += Encoding.ASCII.GetString(Buffer, 0, received);
-                //Console.WriteLine("Attempting Receive");
-                if (clientData.IndexOf("<EOF>") > -1)
+                while (true)
                 {
-                    //Console.WriteLine("Read {0} bytes from socket. \n Data : {1}",
-                    //clientData.Length, clientData);
-                    break;
+                    Buffer = new Byte[1024];
+                    int received = clientSocket.Receive(Buffer);
+                    // decode data sent
+                    clientData += Encoding.ASCII.GetString(Buffer, 0, received);
+                    //Console.WriteLine("Attempting Receive");
+                    if (clientData.IndexOf("<EOF>") > -1)
+                    {
+                        //Console.WriteLine("Read {0} bytes from socket. \n Data : {1}",
+                        //clientData.Length, clientData);
+                        break;
+                    }
+
                 }
+                return clientData.Split(new string[] { "<EOF>" }, StringSplitOptions.None)[0];
             }
-            return clientData.Split(new string[]{"<EOF>"}, StringSplitOptions.None)[0];
+            catch(Exception e)
+            {
+                Console.WriteLine(e);
+                return "SHIEEEEEEEEEEEEET";
+            }
+            //return clientData.Split(new string[] { "<EOF>" }, StringSplitOptions.None)[0];
         }
 
         public static string GetLocalIPAddress()
@@ -112,7 +127,7 @@ namespace Server
 
                 Console.WriteLine("Client Thread started");
                 //SocketSendString(clientSocket, "You are client: " + filePath);
-                AcceptFileInfo();
+                //AcceptFileInfo();
                 Console.WriteLine("Control Flow Begins");
 
                 while(true)
@@ -121,7 +136,6 @@ namespace Server
                     switch(servControl)
                     {
                         case "RequestFileList":
-                            Console.WriteLine("Server to Receive FileInfo");
                             SendFileInfo();
                             break;
 
@@ -129,26 +143,38 @@ namespace Server
                             AcceptFileInfo();
                             break;
 
-                        case "DownloadFile":
-                            Tuple<string, string, int> clientInfo;
-                            Console.WriteLine("Server set to Send FileName for Download");
-                            SocketSendString(clientSocket, "Type FileName with extension");
-                            string receiveFile = Data_Receive2(clientSocket);
-                            clientInfo = CheckFileInfo(receiveFile);
-                            ////Console.WriteLine("File Owner Info: " + clientInfo.Item1.ToString() 
-                            //    + " " + clientInfo.Item2.ToString() + " " 
-                            //    + clientInfo.Item3.ToString());
-
-                            Console.WriteLine("Sending FilePath: " + clientInfo.Item1.ToString());
-                            SocketSendString(clientSocket, clientInfo.Item1.ToString());
-
-                            Console.WriteLine("Sending IP: " + clientInfo.Item2.ToString());
-                            SocketSendString(clientSocket, clientInfo.Item2.ToString());
-
-                            Console.WriteLine("Sending port: " + clientInfo.Item3.ToString());
-                            SocketSendString(clientSocket, clientInfo.Item3.ToString());
-
+                        case "PrintDataBase":
+                            CheckDatabase();
                             break;
+
+                        case "DownloadFile":
+                            try
+                            {
+                                Tuple<string, string, int> clientInfo;
+                                Console.WriteLine("Server set to Send FileName for Download");
+                                SocketSendString(clientSocket, "Type FileName with extension");
+                                string receiveFile = Data_Receive2(clientSocket);
+                                clientInfo = CheckFileInfo(receiveFile);
+                                ////Console.WriteLine("File Owner Info: " + clientInfo.Item1.ToString() 
+                                //    + " " + clientInfo.Item2.ToString() + " " 
+                                //    + clientInfo.Item3.ToString());
+
+                                Console.WriteLine("Sending FilePath: " + clientInfo.Item1.ToString());
+                                SocketSendString(clientSocket, clientInfo.Item1.ToString());
+
+                                Console.WriteLine("Sending IP: " + clientInfo.Item2.ToString());
+                                SocketSendString(clientSocket, clientInfo.Item2.ToString());
+
+                                Console.WriteLine("Sending port: " + clientInfo.Item3.ToString());
+                                SocketSendString(clientSocket, clientInfo.Item3.ToString());
+
+                                break;
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e);
+                                break;
+                            }
                         default:
                             Console.WriteLine("Default Case");
                             //SocketSendString(clientSocket, "In Default Case Currently");
@@ -159,94 +185,101 @@ namespace Server
 
             public void AcceptFileInfo()
             {
-                Console.WriteLine("AcceptFileInfo Started");
-                bool received = false;
-                //receive port number from peer
-                int myPort = int.Parse(Data_Receive2(clientSocket));
-                Console.WriteLine(myPort.ToString());
-                while(true)
+                List<Tuple<string, string, int>> fileInfoList = new List<Tuple<string, string, int>>();
+                string clientIP = Data_Receive2(clientSocket);
+                Console.WriteLine("Receiving File info from: " + clientIP);
+                SocketSendString(clientSocket, "SERVER: RECEIVED IP");
+                string clientPortString = Data_Receive2(clientSocket);
+                Console.WriteLine("ClientPort: " + clientPortString);
+                int clientPort = int.Parse(clientPortString);
+                SocketSendString(clientSocket, "SERVER: RECEIVED PORT");
+                string fileCountString = Data_Receive2(clientSocket);
+               // Console.WriteLine(fileCountString);
+                int fileCount = int.Parse(fileCountString);
+                SocketSendString(clientSocket, "FileCountReceived");
+                for(int i = 0; i<fileCount; i++)
                 {
-                    if(myPort != 0 && received == false)
+                    string fileName = Data_Receive2(clientSocket);
+                    //Console.WriteLine(fileName);
+                    SocketSendString(clientSocket, "FNReceived");
+                    string filePath = Data_Receive2(clientSocket);
+                    //Console.WriteLine(filePath);
+                    SocketSendString(clientSocket, "FPReceived");
+                    string commenceCheck = Data_Receive2(clientSocket);
+                    //Console.WriteLine(commenceCheck);
+                    if(!masterDB.ContainsKey(fileName))
                     {
+                        Console.WriteLine("Adding " + fileName + " to Master Database");
+
+                        Tuple<string, string, int> fileInfo = new Tuple<string, string, int>(filePath, clientIP, clientPort);
+
+                        fileInfoList.Add(fileInfo);
+                        masterDB.Add(fileName, fileInfoList);
+                    }
+                    else
+                    {
+                        Tuple<string, string, int> fileInfo = new Tuple<string, string, int>(filePath, clientIP, clientPort);
+                        //Console.WriteLine(fileName);
+                        List<Tuple<string, string, int>> dupTupleList = masterDB[fileName];
                        
-                        int fileIndex = 0;
-                        //Console.WriteLine("Attempting rec1 send to client: " + filePath);
-                        SocketSendString(clientSocket, "SERVER: PortNumber has been Received, Proceeding...");
-                        received = true;
-                       // Console.WriteLine("Stage 2: IPAddress Retrieval");
-                        string peerIP = string.Empty;
-                        peerIP = Data_Receive2(clientSocket);
-                        SocketSendString(clientSocket, "SERVER: IPAddress Received, Proceeding...");
-                        string fileName = string.Empty;
-                        string filePath = string.Empty;
-                        
-                        //Console.WriteLine("Stage 3: FileName Retrieval");
-                        int fileCount = int.Parse(Data_Receive2(clientSocket));
-                        //Console.WriteLine("FileRetrieve Started over " + fileCount.ToString() + " files");
-                        while (fileIndex < fileCount)
+                        foreach(Tuple<string, string, int> compTuple in masterDB[fileName].ToList())
                         {
-                            fileName = Data_Receive2(clientSocket);
-                            Console.WriteLine("FileName: " + fileName);
-                            SocketSendString(clientSocket, "SendFilePath");
-                            filePath = Data_Receive2(clientSocket);
-                            Console.WriteLine("FilePath: " + filePath);
-                            
-                            var tupInfo = new Tuple<string, string, int>(filePath, peerIP, myPort);
-                            
-                            //Console.WriteLine(fileinfolist.ToString());
-                            if(masterDB.ContainsKey(fileName))
+                           
+                            if (fileInfo.Item1 == compTuple.Item1 && fileInfo.Item2 == compTuple.Item2 && fileInfo.Item3 == compTuple.Item3)
                             {
-                                List<Tuple<string, string, int>> tupList = masterDB[fileName];
-                                foreach(var tup in tupList)
-                                {
-                                    if(tupInfo.Item1 == tup.Item1 
-                                        && tupInfo.Item2 == tup.Item2 
-                                        && tupInfo.Item3 == tup.Item3 )
-                                    {
-                                        Console.WriteLine("Duplicate FileInfo Found, Not Adding to Server List");
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("Uniqe FileInfo Found, Adding to Server List");
-                                        masterDB[fileName].Add(tupInfo);
-                                    }
-                                }
-                                //masterDB[fileName].Add(tupInfo);
-                                Console.WriteLine(fileName.ToString());
+                                Console.WriteLine("Duplicate File Found");
+                                masterDB[fileName] = masterDB[fileName].Distinct().ToList();
+                                
+                            }
+                            else if (fileInfo.Item1 == compTuple.Item1 && fileInfo.Item2 == compTuple.Item2 && fileInfo.Item3 != compTuple.Item3)
+                            {
+                                
+                                Console.WriteLine("Adding new fileInfo to File");
+                                masterDB[fileName].Add(fileInfo);
                             }
                             else
                             {
-                                masterDB[fileName] = new List<Tuple<string,string,int>>();
-                                masterDB[fileName].Add(tupInfo);
-
-                                foreach (Tuple<string, string, int> tup in masterDB[fileName])
-                                {
-                                    Console.WriteLine(tup.Item1.ToString() + " " + tup.Item2 + " " + tup.Item3);
-                                }
-                      
+                                Console.WriteLine("Doing Nothing here");
                             }
-                            
-                            fileIndex = fileIndex + 1;
-                            
-
                         }
-                        //Console.WriteLine("Successful FileInfo Transmission from Client");
-                        
-                        break;
                     }
-                    break;
                 }
+            }
+
+            public void CheckDatabase()
+            {
+                for(int i = 0; i < masterDB.Count; i++)
+                {
+                   Console.WriteLine(i.ToString() + ":::::::::::: ");
+                    foreach(List<Tuple<string, string, int>> tupLst in masterDB.Values.Distinct().ToList())
+                    {   
+                        foreach(Tuple<string, string, int> tupPrint in tupLst)
+                        {
+                            Console.WriteLine(tupPrint.Item1 + ":::" + tupPrint.Item2 + ":::" + tupPrint.Item3);
+                        }
+                        Console.WriteLine();
+                    }
+                }
+                
             }
 
             public void SendFileInfo()
             {
-                Console.WriteLine("Sending All Current Filenames to Client: " + filePath);
-                SocketSendString(clientSocket, masterDB.Keys.Count.ToString());
-                foreach(string varFileName in masterDB.Keys)
+                Console.WriteLine("Request for File List Received");
+                SocketSendString(clientSocket, "SERVER: SendingFileNames");
+                string readyConfirm = Data_Receive2(clientSocket);
+                Console.WriteLine(readyConfirm);
+                //string fileCount = masterDB.Count.ToString();
+                //Console.WriteLine(fileCount);
+                
+                foreach(string fn in masterDB.Keys)
                 {
-                    Console.WriteLine(varFileName);
-                    SocketSendString(clientSocket, varFileName);
+                    Console.WriteLine("Sending: " + fn);
+                    SocketSendString(clientSocket, fn);
                 }
+                Console.WriteLine("");
+                SocketSendString(clientSocket, "CloseLoop");
+
             }
 
             public Tuple<string, string, int> CheckFileInfo(string fileChoice)

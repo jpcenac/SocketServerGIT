@@ -7,7 +7,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.IO;
 using System.Threading;
-using System.Windows.Forms;
+
 
 namespace Client
 {
@@ -16,32 +16,33 @@ namespace Client
         
         public static Socket listenerSocket;
         public static Socket master;
-        public static FolderBrowserDialog hDirectory;
-        public static FolderBrowserDialog rDirectory;
+        //public static FolderBrowserDialog hDirectory;
+        //public static FolderBrowserDialog rDirectory;
         public static string hostFolder;
         public static string receiveFolder;
         
         //public static Dictionary<string, FileData> clientFiles = new Dictionary<string,string>();
 
-        [STAThread]
+        
         static void Main(string[] args)
         {
+            //hDirectory = new FolderBrowserDialog();
+            //rDirectory = new FolderBrowserDialog();
+            //Console.WriteLine("Choose Host Directory");
+            //if(hDirectory.ShowDialog() == DialogResult.OK)
+            //{
+            //    hostFolder = hDirectory.SelectedPath;
+            //    Console.WriteLine("Host Directory: " + hostFolder.ToString());
+            //}
+            //Console.WriteLine("Choose Receive Directory");
+            //if(rDirectory.ShowDialog() == DialogResult.OK)
+            //{
+            //    receiveFolder = rDirectory.SelectedPath;
+            //    Console.WriteLine("Receive Directory: " + receiveFolder.ToString());
+            //}
+            hostFolder = "C:\\Users\\jpc0759.GAMELAB\\Desktop\\AHostDir";
+            receiveFolder = "C:\\Users\\jpc0759.GAMELAB\\Desktop\\AReceiveDir";
 
-
-            hDirectory = new FolderBrowserDialog();
-            rDirectory = new FolderBrowserDialog();
-            Console.WriteLine("Choose Host Directory");
-            if(hDirectory.ShowDialog() == DialogResult.OK)
-            {
-                hostFolder = hDirectory.SelectedPath;
-                Console.WriteLine("Host Directory: " + hostFolder.ToString());
-            }
-            Console.WriteLine("Choose Receive Directory");
-            if(rDirectory.ShowDialog() == DialogResult.OK)
-            {
-                receiveFolder = rDirectory.SelectedPath;
-                Console.WriteLine("Receive Directory: " + receiveFolder.ToString());
-            }
 
             listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             master = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -67,6 +68,7 @@ namespace Client
             Random randPort = new Random();
             int myPort = randPort.Next(30000, 30500);
             //int myPort = 30001;
+            Console.WriteLine("Port: " + myPort);
             string myIPString = GetLocalIPAddress();
             IPEndPoint myPeerIP = new IPEndPoint(IPAddress.Parse(myIPString), myPort);
 
@@ -78,9 +80,8 @@ namespace Client
             Retry:
             try
             {
-                Console.WriteLine("My Port is: " + myPort);
                 master.Connect(ip);
-                Console.WriteLine("Connect Successful");
+                Console.WriteLine("Connection Successful");
             }
             catch
             {
@@ -93,7 +94,7 @@ namespace Client
             try
             {
                 //CSendFileInfo(myPort, myIPString, fileNames);
-                CSendFileInfo(myPort, myIPString, fileNames, filePaths);
+                //CSendFileInfo(myPort, myIPString, fileNames, filePaths);
 
                 Console.WriteLine("Retreive FileInfo from Server = R ");
                 Console.WriteLine("Update your FileInfo to Server = U");
@@ -111,26 +112,19 @@ namespace Client
                         case "r":
                         case "R":
                             SocketSendString(master, "RequestFileList");
-                            int fileCount = int.Parse(Data_Receive2(master));
-                            Console.WriteLine("Receiving " + fileCount.ToString() + " filenames from Master Server");
-                            for (int i = 0; i < fileCount; i++)
-                            {
-                                string fileName = Data_Receive2(master);
-                                Console.WriteLine(fileName);
-                            }
+                            CSReceiveFileInfo();
+                            Console.WriteLine("Request: Successful Break");
                             break;
                         case "u":
                         case "U":
                             SocketSendString(master, "UpdateFileServer");
                             CSendFileInfo(myPort, myIPString, fileNames, filePaths);
-
+                            Console.WriteLine("Update: Successful Break");
                             break;
                         case "d":
                         case "D":
                             try
                             {
-
-
                                 SocketSendString(master, "DownloadFile");
                                 string output = Data_Receive2(master);
                                 Console.WriteLine(output);
@@ -144,13 +138,24 @@ namespace Client
                                 Console.WriteLine("HostInfo: " + filePath + " " + HostIP + " " + HostPort);
                                 Thread DownloadThread = new Thread(() => DownloadFileFromHost(filePath, HostIP, HostPort, fileRequest));
                                 DownloadThread.Start();
+
                                 break;
                             }
+                        
+
                             catch(Exception e)
                             {
                                 Console.WriteLine(e);
                                 break;
                             }
+
+                        case "p":
+                        case "P":
+                            SocketSendString(master, "PrintDataBase");
+                            break;
+                        default:
+                            Console.WriteLine("Incorrect Input");
+                            break;
                     }
                 }
             }
@@ -235,48 +240,41 @@ namespace Client
 
         public static void CSendFileInfo(int myPort, string myIP, string[] fileNames, string[] filePaths)
         {
-            Console.WriteLine("Client Preparing File Info \n Sending....");
-            foreach(string fn in fileNames)
-            {
-                Console.WriteLine("Names: " + fn);
-            }
-            int index = 0;
-            string portString = myPort.ToString();
-            // Console.WriteLine("Attempting to send: " + ex);
-            SocketSendString(master, portString);
-            //SocketSendString(master, String.Empty);
-            string PortRetConfirmation = Data_Receive2(master).ToString();
-            Console.WriteLine(PortRetConfirmation);
+            int fileCount = fileNames.Length;
+            Console.WriteLine("Sending FileInfo");
             SocketSendString(master, myIP);
-            string IPAddressConfirmation = Data_Receive2(master).ToString();
-            Console.WriteLine(IPAddressConfirmation);
-            SocketSendString(master, fileNames.Count().ToString());
-            while (index < fileNames.Count())
+            string ipConfirm = Data_Receive2(master);
+            //Console.WriteLine(ipConfirm);
+            SocketSendString(master, myPort.ToString());
+            string portConfirm = Data_Receive2(master);
+            //Console.WriteLine(portConfirm);
+            SocketSendString(master, fileCount.ToString());
+            string FCConfirm = Data_Receive2(master);
+            //Console.WriteLine(FCConfirm);
+            for(int i = 0; i < fileCount; i++)
             {
-                Console.WriteLine("FileName " + fileNames[index] + " is being Sent");
-                //Console.WriteLine(myFiles[0]);
-
-                SocketSendString(master, fileNames[index]);
-                Data_Receive2(master);
-                SocketSendString(master, filePaths[index]);
-                
-                index = index + 1;
+                SocketSendString(master, fileNames[i]);
+                string FNConfirm = Data_Receive2(master);
+                //Console.WriteLine("FNCheck: " + FNConfirm);
+                SocketSendString(master, filePaths[i]);
+                string FPConfirm = Data_Receive2(master);
+                //Console.WriteLine("FPCheck: " + FPConfirm);
+                SocketSendString(master, "CommenceInsert");
             }
+     
         }
 
         public static void CSReceiveFileInfo()
         {
-            int servFileCount = int.Parse(Data_Receive2(master));
-
-            while (true)
+            string ReceiveConfrim = Data_Receive2(master);
+            Console.WriteLine(ReceiveConfrim);
+            SocketSendString(master, "Ready");
+            string Receive = Data_Receive2(master);
+            while(Receive != "CloseLoop")
             {
-                for (int i = 0; i < servFileCount - 1; i++)
-                {
-
-                    string dynamicString = Data_Receive2(master);
-
-                    Console.WriteLine("Here:" + dynamicString);
-                }
+                Console.WriteLine("FileName: " + Receive);
+                Receive = Data_Receive2(master);
+                
             }
         }
 
