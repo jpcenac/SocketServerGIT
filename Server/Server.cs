@@ -152,8 +152,11 @@ namespace Server
                             {
                                 Tuple<string, string, int> clientInfo;
                                 Console.WriteLine("Server set to Send FileName for Download");
-                                SocketSendString(clientSocket, "Type FileName with extension");
+                                SocketSendString(clientSocket, "SERVER//Type FileName with extension");
                                 string receiveFile = Data_Receive2(clientSocket);
+                                if(masterDB.Keys.Contains(receiveFile))
+                                {
+                                    SocketSendString(clientSocket, "Correct");
                                 clientInfo = CheckFileInfo(receiveFile);
                                 ////Console.WriteLine("File Owner Info: " + clientInfo.Item1.ToString() 
                                 //    + " " + clientInfo.Item2.ToString() + " " 
@@ -169,12 +172,20 @@ namespace Server
                                 SocketSendString(clientSocket, clientInfo.Item3.ToString());
 
                                 break;
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Client Entered Incorrect Filename");
+                                    SocketSendString(clientSocket, "Incorrect");
+                                }
+                              
                             }
                             catch (Exception e)
                             {
                                 Console.WriteLine(e);
                                 break;
                             }
+                            break;
                         default:
                             Console.WriteLine("Default Case");
                             //SocketSendString(clientSocket, "In Default Case Currently");
@@ -185,7 +196,7 @@ namespace Server
 
             public void AcceptFileInfo()
             {
-                List<Tuple<string, string, int>> fileInfoList = new List<Tuple<string, string, int>>();
+                
                 string clientIP = Data_Receive2(clientSocket);
                 Console.WriteLine("Receiving File info from: " + clientIP);
                 SocketSendString(clientSocket, "SERVER: RECEIVED IP");
@@ -197,6 +208,7 @@ namespace Server
                // Console.WriteLine(fileCountString);
                 int fileCount = int.Parse(fileCountString);
                 SocketSendString(clientSocket, "FileCountReceived");
+                
                 for(int i = 0; i<fileCount; i++)
                 {
                     string fileName = Data_Receive2(clientSocket);
@@ -206,19 +218,21 @@ namespace Server
                     //Console.WriteLine(filePath);
                     SocketSendString(clientSocket, "FPReceived");
                     string commenceCheck = Data_Receive2(clientSocket);
+                    List<Tuple<string, string, int>> fileInfoList = new List<Tuple<string, string, int>>();
+                    Tuple<string, string, int> fileInfo = new Tuple<string, string, int>(filePath, clientIP, clientPort);
                     //Console.WriteLine(commenceCheck);
                     if(!masterDB.ContainsKey(fileName))
                     {
+                        fileInfoList.Clear();
                         Console.WriteLine("Adding " + fileName + " to Master Database");
 
-                        Tuple<string, string, int> fileInfo = new Tuple<string, string, int>(filePath, clientIP, clientPort);
-
+                        Console.WriteLine(fileName + ": " + fileInfo.Item1 + " " + fileInfo.Item2+ " " + fileInfo.Item3.ToString());
                         fileInfoList.Add(fileInfo);
                         masterDB.Add(fileName, fileInfoList);
                     }
                     else
                     {
-                        Tuple<string, string, int> fileInfo = new Tuple<string, string, int>(filePath, clientIP, clientPort);
+                        //REDO THIS JANK ASS CODE FUCK YOU
                         //Console.WriteLine(fileName);
                         List<Tuple<string, string, int>> dupTupleList = masterDB[fileName];
                        
@@ -231,11 +245,18 @@ namespace Server
                                 masterDB[fileName] = masterDB[fileName].Distinct().ToList();
                                 
                             }
-                            else if (fileInfo.Item1 == compTuple.Item1 && fileInfo.Item2 == compTuple.Item2 && fileInfo.Item3 != compTuple.Item3)
+                            else if (fileInfo.Item1 != compTuple.Item1 && fileInfo.Item2 == compTuple.Item2 && fileInfo.Item3 != compTuple.Item3)
                             {
+                                if (fileInfo.Item1 != compTuple.Item1)
+                                {
+                                    Console.WriteLine("Different File paths");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Adding new fileInfo to File");
+                                    masterDB[fileName].Add(fileInfo);
+                                }
                                 
-                                Console.WriteLine("Adding new fileInfo to File");
-                                masterDB[fileName].Add(fileInfo);
                             }
                             else
                             {
@@ -248,15 +269,13 @@ namespace Server
 
             public void CheckDatabase()
             {
-                for(int i = 0; i < masterDB.Count; i++)
+                foreach(string fn in masterDB.Keys)
                 {
-                   Console.WriteLine(i.ToString() + ":::::::::::: ");
-                    foreach(List<Tuple<string, string, int>> tupLst in masterDB.Values.Distinct().ToList())
-                    {   
-                        foreach(Tuple<string, string, int> tupPrint in tupLst)
-                        {
-                            Console.WriteLine(tupPrint.Item1 + ":::" + tupPrint.Item2 + ":::" + tupPrint.Item3);
-                        }
+                   Console.WriteLine(fn + " :::::::::::: ");
+                    foreach(Tuple<string, string, int> tupPrint in masterDB[fn].ToList())
+                    {                           
+                        Console.WriteLine(tupPrint.Item1 + ":::" + tupPrint.Item2 + ":::" + tupPrint.Item3);
+                       
                         Console.WriteLine();
                     }
                 }
@@ -269,17 +288,18 @@ namespace Server
                 SocketSendString(clientSocket, "SERVER: SendingFileNames");
                 string readyConfirm = Data_Receive2(clientSocket);
                 Console.WriteLine(readyConfirm);
+                SocketSendString(clientSocket, "SendingConfirmed");
                 //string fileCount = masterDB.Count.ToString();
                 //Console.WriteLine(fileCount);
-                
+                string FileList = string.Empty;
                 foreach(string fn in masterDB.Keys)
                 {
-                    Console.WriteLine("Sending: " + fn);
-                    SocketSendString(clientSocket, fn);
+                    //Console.WriteLine("Sending: " + fn);
+                    FileList = FileList + string.Concat(fn, ":");
+                    
                 }
-                Console.WriteLine("");
-                SocketSendString(clientSocket, "CloseLoop");
-
+                Console.WriteLine(FileList);
+                SocketSendString(clientSocket, FileList);
             }
 
             public Tuple<string, string, int> CheckFileInfo(string fileChoice)

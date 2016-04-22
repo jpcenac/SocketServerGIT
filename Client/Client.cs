@@ -61,6 +61,7 @@ namespace Client
             Console.Write("Enter server IP: ");
             //string connectIP = Console.ReadLine();
             string connectIP = "130.70.82.148";
+            //string connectIP = "127.0.0.1";
             Console.WriteLine(connectIP);
 
             IPEndPoint ip = new IPEndPoint(IPAddress.Parse(connectIP), 30000);
@@ -99,10 +100,11 @@ namespace Client
                 Console.WriteLine("Retreive FileInfo from Server = R ");
                 Console.WriteLine("Update your FileInfo to Server = U");
                 Console.WriteLine("Download file from server's Clients = D");
+                Console.WriteLine("Print Serverside the Master Database = P");
 
                 IPEndPoint myHostingIP = new IPEndPoint(IPAddress.Parse(myIPString), myPort);
                 string input = string.Empty;
-
+                Thread.Sleep(1000);
                 while (true)
                 {
                     Console.WriteLine("Input: ");
@@ -132,13 +134,24 @@ namespace Client
 
                                 SocketSendString(master, fileRequest);
                                 Console.WriteLine("Retriving File Owner");
-                                string filePath = Data_Receive2(master);
-                                string HostIP = Data_Receive2(master);
-                                string HostPort = Data_Receive2(master);
-                                Console.WriteLine("HostInfo: " + filePath + " " + HostIP + " " + HostPort);
-                                Thread DownloadThread = new Thread(() => DownloadFileFromHost(filePath, HostIP, HostPort, fileRequest));
-                                DownloadThread.Start();
+                                string confirm = Data_Receive2(master);
+                                if(confirm == "Correct")
+                                {
+                                    string filePath = Data_Receive2(master);
+                                    string HostIP = Data_Receive2(master);
+                                    string HostPort = Data_Receive2(master);
+                                    Console.WriteLine("HostInfo: \n" + filePath + "\n " + HostIP + "\n " + HostPort);
+                                    Thread DownloadThread = new Thread(() => DownloadFileFromHost(filePath, HostIP, HostPort, fileRequest));
+                                    DownloadThread.Start();
+                                    while(DownloadThread.IsAlive)
+                                    {
 
+                                    }
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Server Retrieved Incorrect Filename");
+                                }
                                 break;
                             }
                         
@@ -180,8 +193,11 @@ namespace Client
         //    download.Close();
         //}
 
+
+        //Listen and Serve File
         public static void ListenThread()
         {
+            //Socket serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             Socket serverSocket;
             Console.WriteLine("ListenThread Started");
             while (true)
@@ -189,18 +205,26 @@ namespace Client
                 listenerSocket.Listen(0);
                 serverSocket = listenerSocket.Accept();
                 string successRec = Data_Receive2(serverSocket);
+                Console.WriteLine("///////////////////////////////////////////////" + successRec);
                 if(successRec == "RequestingFile")
                 {
-                    Console.WriteLine("SERVER: Successful Request");
+                    Console.WriteLine("SERVER\\\\ Successful Request");
                     SocketSendString(serverSocket, "RequestAccepted");
                     string fileToSend = Data_Receive2(serverSocket);
                     byte[] fileData = File.ReadAllBytes(fileToSend);
-                    Console.WriteLine("SERVER: Attempting to send file" + fileToSend + " to Client Requester");
+                    //Console.WriteLine("SERVER//Attempting to send file" + fileToSend + " to Client Requester");
+                    Console.WriteLine("SERVER\\\\SENDING FILESIZE LEN: " + fileData.Length);
                     serverSocket.SendFile(fileToSend);
-                    Console.WriteLine("SERVER: Seding File");
+                    Console.WriteLine("Done Sending");
+                    //string fileConfirm = Data_Receive2(serverSocket);
+                    //Console.WriteLine(fileConfirm);
+                    //if(fileConfirm == "DownloadComplete")
+                    //{
                     serverSocket.Shutdown(SocketShutdown.Both);
                     serverSocket.Close();
                     Console.WriteLine("Socket Closed");
+                    //}
+                    
                     
                 }
             }
@@ -223,13 +247,12 @@ namespace Client
             // while there's data to accept
             while (true)
             {
-                Buffer = new Byte[1024];
+                Buffer = new Byte[516];
                 int received = clientSocket.Receive(Buffer);
                 // decode data sent
                 clientData += Encoding.ASCII.GetString(Buffer, 0, received);
                 if (clientData.IndexOf("<EOF>") > -1)
                 {
-
                     //Console.WriteLine("Read {0} bytes from socket. \n Data : {1}",
                     // clientData.Length, clientData);
                     break;
@@ -269,44 +292,58 @@ namespace Client
             string ReceiveConfrim = Data_Receive2(master);
             Console.WriteLine(ReceiveConfrim);
             SocketSendString(master, "Ready");
-            string Receive = Data_Receive2(master);
-            while(Receive != "CloseLoop")
+            string SendingConfirm = Data_Receive2(master);
+            Console.WriteLine(SendingConfirm);
+            string fileList = Data_Receive2(master);
+            string[] fileNames = fileList.Split(':').ToArray();
+            foreach(string fn in fileNames)
             {
-                Console.WriteLine("FileName: " + Receive);
-                Receive = Data_Receive2(master);
-                
+                Console.WriteLine(fn);
             }
+            
         }
 
         public static void DownloadFileFromHost(string filePath, string hostIP, string hostPort, string fileName)
         {
-            
             Socket ReceiverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            Console.WriteLine("DOWNLAODER: SERVERS'S FILEPATH: " + filePath);
-            Directory.SetCurrentDirectory(receiveFolder);
-            Console.WriteLine("DOWNLOADER: MY RECEIVE PATH: " + Directory.GetCurrentDirectory());
+            var myDownload = File.Create(Path.Combine(receiveFolder, fileName));
 
+            Console.WriteLine("DOWNLAODER//SERVERS'S FILEPATH: " + filePath);
+            Directory.SetCurrentDirectory(receiveFolder);
+            Console.WriteLine("DOWNLOADER/////MY RECEIVE PATH: " + Directory.GetCurrentDirectory());
+
+            ///////////////////////////////////////
             int truePort = int.Parse(hostPort);
+            IPEndPoint hostIPEndPoint = new IPEndPoint(IPAddress.Parse(hostIP), truePort);
+            ReceiverSocket.Connect(hostIPEndPoint);
+            /////////////////////////////////////
+
             byte[] Buffer = new Byte[1024];
             int bytesRead;
 
-            var myDownload = File.Create(Path.Combine(receiveFolder, fileName));
-
-            IPEndPoint hostIPEndPoint = new IPEndPoint(IPAddress.Parse(hostIP), truePort);
-            ReceiverSocket.Connect(hostIPEndPoint);
             SocketSendString(ReceiverSocket, "RequestingFile");
             string acceptRetrieval = Data_Receive2(ReceiverSocket);
             if(acceptRetrieval == "RequestAccepted")
             {
-                Console.WriteLine("DOWNLOADER: REQUESTING FILEPATH: " + filePath);
-                
-                SocketSendString(ReceiverSocket, filePath);
-                Console.WriteLine("DOWNLOADER: BEGINNING RECEIVE");
+                int totalBytesRead = 0;
+                int readCount = 0;
+                SocketSendString(ReceiverSocket, filePath);     
                 while((bytesRead = ReceiverSocket.Receive(Buffer)) > 0)
                 {
+                    //Console.WriteLine(Buffer.ToArray().ToString());
+                    totalBytesRead += bytesRead;
+                    readCount += 1;
+                    Console.Write(totalBytesRead.ToString() + " ");
+                    Console.WriteLine(" " + bytesRead.ToString() + " " + readCount.ToString());
                     myDownload.Write(Buffer, 0, bytesRead);
+                    //myDownload.WriteAsync(Buffer, 0, bytesRead);
+
+                    
                 }
-               
+                myDownload.Close();
+                
+                Thread.CurrentThread.Abort();
+                /*SocketSendString(ReceiverSocket, "DownloadCompleted");*/
             }
             //Console.WriteLine(acceptRetrieval);
         }
@@ -333,6 +370,7 @@ namespace Client
             return fileNames;
         }
 
+        
 
 
         //public static string GetFilePath(string fileName)
