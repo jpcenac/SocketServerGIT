@@ -10,6 +10,7 @@ using System.Threading;
 using System.Windows.Forms;
 
 
+
 namespace Client
 {
     class Client
@@ -20,13 +21,19 @@ namespace Client
 
         public static string myIP;
         public static int myPort;
+<<<<<<< HEAD
         public static FolderBrowserDialog hDirectory;
         public static FolderBrowserDialog rDirectory;
+=======
+        //public static FolderBrowserDialog hDirectory;
+        //public static FolderBrowserDialog rDirectory;
+>>>>>>> origin/master
         public static string hostFolder;
         public static string receiveFolder;
         
         //public static Dictionary<string, FileData> clientFiles = new Dictionary<string,string>();
 
+<<<<<<< HEAD
         [STAThread]
         static void Main(string[] args)
         {
@@ -46,6 +53,27 @@ namespace Client
             }
             //hostFolder = "C:\\Users\\jpcen\\Desktop\\AAAAAAAA\\Host";
             //receiveFolder = "C:\\Users\\jpcen\\Desktop\\AAAAAAAA\\Receive";
+=======
+        
+        static void Main(string[] args)
+        {
+            //hDirectory = new FolderBrowserDialog();
+            //rDirectory = new FolderBrowserDialog();
+            //Console.WriteLine("Choose Host Directory");
+            //if(hDirectory.ShowDialog() == DialogResult.OK)
+            //{
+            //    hostFolder = hDirectory.SelectedPath;
+            //    Console.WriteLine("Host Directory: " + hostFolder.ToString());
+            //}
+            //Console.WriteLine("Choose Receive Directory");
+            //if(rDirectory.ShowDialog() == DialogResult.OK)
+            //{
+            //    receiveFolder = rDirectory.SelectedPath;
+            //    Console.WriteLine("Receive Directory: " + receiveFolder.ToString());
+            //}
+            hostFolder = "C:\\Users\\jpc0759.GAMELAB\\Desktop\\AHostDir";
+            receiveFolder = "C:\\Users\\jpc0759.GAMELAB\\Desktop\\AReceiveDir";
+>>>>>>> origin/master
 
 
             hosterSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -68,6 +96,10 @@ namespace Client
             string connectIP = "192.168.1.103";
             //string connectIP = "130.70.82.148";
             //string connectIP = Console.ReadLine();
+<<<<<<< HEAD
+=======
+            string connectIP = "130.70.82.148";
+>>>>>>> origin/master
             //string connectIP = "127.0.0.1";
             Console.WriteLine(connectIP);
             IPEndPoint serverIPEP = new IPEndPoint(IPAddress.Parse(connectIP), 30000);
@@ -78,6 +110,7 @@ namespace Client
             myPort = randPort.Next(30000, 30500);
             //int myPort = 30001;
             Console.WriteLine("Port: " + myPort);
+<<<<<<< HEAD
 
             //For hosting and Serving Files to Other Clients
             myIP = GetLocalIPAddress();
@@ -86,6 +119,16 @@ namespace Client
 
             hosterSocket.Bind(myHostIP);
 
+=======
+
+            //For hosting and Serving Files to Other Clients
+            myIP = GetLocalIPAddress();
+            
+            IPEndPoint myHostIP = new IPEndPoint(IPAddress.Parse(myIP), myPort);
+
+            hosterSocket.Bind(myHostIP);
+
+>>>>>>> origin/master
             Thread serveClient = new Thread(ListenThread);
             serveClient.Start();
             /////////////////////////////////////////////////////////
@@ -106,7 +149,10 @@ namespace Client
             //send stuff
             try
             {
+<<<<<<< HEAD
                 SocketSendString(master, string.Concat(myIP, ";", myPort.ToString()));
+=======
+>>>>>>> origin/master
                 //CSendFileInfo(myPort, myIPString, fileNames);
                 //CSendFileInfo(myPort, myIPString, fileNames, filePaths);
 
@@ -120,7 +166,10 @@ namespace Client
                 Thread.Sleep(1000);
                 while (true)
                 {
+<<<<<<< HEAD
                     
+=======
+>>>>>>> origin/master
                     Console.WriteLine("Input: ");
                     input = Console.ReadLine();
                     switch (input)
@@ -169,6 +218,7 @@ namespace Client
                                 {
                                     Console.WriteLine("Server Retrieved Incorrect Filename");
                                 }
+<<<<<<< HEAD
                                 break;
                             }
                         
@@ -178,6 +228,17 @@ namespace Client
                                 Console.WriteLine(e);
                                 break;
                             }
+=======
+                                break;
+                            }
+                        
+
+                            catch(Exception e)
+                            {
+                                Console.WriteLine(e);
+                                break;
+                            }
+>>>>>>> origin/master
 
                         case "p":
                         case "P":
@@ -187,11 +248,28 @@ namespace Client
                         case "q":
                         case "Q":
                             SocketSendString(master, "Disconnecting");
+<<<<<<< HEAD
+=======
+                            string DisconnectConfirm = Data_Receive2(master);
+                            if (DisconnectConfirm == "SendID")
+                            {
+                                string stPort = myPort.ToString();
+                                string sendID = String.Concat(myIP, ";", stPort);
+                                SocketSendString(master, sendID);
+                            }
+                            else
+                            {
+                                break;
+                            }
+>>>>>>> origin/master
                             string RemoveConfirm = Data_Receive2(master);
                             Console.WriteLine(RemoveConfirm);
                             master.Shutdown(SocketShutdown.Both);
                             master.Close();
+<<<<<<< HEAD
                             Thread.Sleep(3000);
+=======
+>>>>>>> origin/master
                             Environment.Exit(0);
                             break;
                         default:
@@ -271,7 +349,17 @@ namespace Client
         public static void CSendFileInfo(int myPort, string myIP, string[] fileNames, string[] filePaths)
         {
             int fileCount = fileNames.Length;
+<<<<<<< HEAD
 
+=======
+            Console.WriteLine("Sending FileInfo");
+            SocketSendString(master, myIP);
+            string ipConfirm = Data_Receive2(master);
+            //Console.WriteLine(ipConfirm);
+            SocketSendString(master, myPort.ToString());
+            string portConfirm = Data_Receive2(master);
+            //Console.WriteLine(portConfirm);
+>>>>>>> origin/master
             SocketSendString(master, fileCount.ToString());
             string FCConfirm = Data_Receive2(master);
             //Console.WriteLine(FCConfirm);
