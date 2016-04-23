@@ -305,7 +305,7 @@ namespace Server
 
                                     Console.WriteLine("Adding new fileInfo to File");
                                     masterDB[fileName].Add(fileInfo);
-                                    Console.WriteLine("FILEINFO HOSTS: masterDB[fileName].Count.ToString()");
+                                    Console.WriteLine("FILEINFO HOSTS:" +  masterDB[fileName].Count.ToString());
                                 }
 
                             }

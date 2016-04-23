@@ -133,8 +133,12 @@ namespace Client
                             break;
                         case "u":
                         case "U":
+                            //hDirectory = new FolderBrowserDialog();
+                            //rDirectory = new FolderBrowserDialog();
+                            string[] newfilePaths = Directory.GetFiles(hostFolder);
+                            string[] newfileNames = JustFileNames(hostFolder);
                             SocketSendString(master, "UpdateFileServer");
-                            CSendFileInfo(myPort, myIP, fileNames, filePaths);
+                            CSendFileInfo(myPort, myIP, newfileNames, newfilePaths);
                             Console.WriteLine("Update: Successful Break");
                             break;
                         case "d":

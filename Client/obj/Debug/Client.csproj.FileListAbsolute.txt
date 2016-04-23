@@ -17,3 +17,9 @@ C:\GITHUB\SocketServerGIT-master\Client\bin\Debug\Client.pdb
 C:\GITHUB\SocketServerGIT-master\Client\obj\Debug\Client.csprojResolveAssemblyReference.cache
 C:\GITHUB\SocketServerGIT-master\Client\obj\Debug\Client.exe
 C:\GITHUB\SocketServerGIT-master\Client\obj\Debug\Client.pdb
+C:\Users\jpcen\Documents\Visual Studio 2013\Projects\SocketServerGIT\Client\bin\Debug\Client.exe.config
+C:\Users\jpcen\Documents\Visual Studio 2013\Projects\SocketServerGIT\Client\bin\Debug\Client.exe
+C:\Users\jpcen\Documents\Visual Studio 2013\Projects\SocketServerGIT\Client\bin\Debug\Client.pdb
+C:\Users\jpcen\Documents\Visual Studio 2013\Projects\SocketServerGIT\Client\obj\Debug\Client.csprojResolveAssemblyReference.cache
+C:\Users\jpcen\Documents\Visual Studio 2013\Projects\SocketServerGIT\Client\obj\Debug\Client.exe
+C:\Users\jpcen\Documents\Visual Studio 2013\Projects\SocketServerGIT\Client\obj\Debug\Client.pdb
