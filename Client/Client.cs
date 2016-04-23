@@ -14,8 +14,11 @@ namespace Client
     class Client
     {
         
-        public static Socket listenerSocket;
+        public static Socket hosterSocket;
         public static Socket master;
+
+        public static string myIP;
+        public static int myPort;
         //public static FolderBrowserDialog hDirectory;
         //public static FolderBrowserDialog rDirectory;
         public static string hostFolder;
@@ -44,7 +47,7 @@ namespace Client
             receiveFolder = "C:\\Users\\jpc0759.GAMELAB\\Desktop\\AReceiveDir";
 
 
-            listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            hosterSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             master = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
 
@@ -58,31 +61,38 @@ namespace Client
 
             //get filename path(necessary for sending information)
 
+
+            //Server Info///////
             Console.Write("Enter server IP: ");
             //string connectIP = Console.ReadLine();
             string connectIP = "130.70.82.148";
             //string connectIP = "127.0.0.1";
             Console.WriteLine(connectIP);
+            IPEndPoint serverIPEP = new IPEndPoint(IPAddress.Parse(connectIP), 30000);
+            ////////////////////////////////////
 
-            IPEndPoint ip = new IPEndPoint(IPAddress.Parse(connectIP), 30000);
-
+            //Get Port and IP
             Random randPort = new Random();
-            int myPort = randPort.Next(30000, 30500);
+            myPort = randPort.Next(30000, 30500);
             //int myPort = 30001;
             Console.WriteLine("Port: " + myPort);
-            string myIPString = GetLocalIPAddress();
-            IPEndPoint myPeerIP = new IPEndPoint(IPAddress.Parse(myIPString), myPort);
 
-            listenerSocket.Bind(myPeerIP);
+            //For hosting and Serving Files to Other Clients
+            myIP = GetLocalIPAddress();
+            
+            IPEndPoint myHostIP = new IPEndPoint(IPAddress.Parse(myIP), myPort);
+
+            hosterSocket.Bind(myHostIP);
 
             Thread serveClient = new Thread(ListenThread);
             serveClient.Start();
+            /////////////////////////////////////////////////////////
 
             Retry:
             try
             {
-                master.Connect(ip);
-                Console.WriteLine("Connecting from " + myIPString);
+                master.Connect(serverIPEP);
+                Console.WriteLine("Connecting from " + myIP);
             }
             catch
             {
@@ -103,7 +113,6 @@ namespace Client
                 Console.WriteLine("Print Serverside the Master Database = P");
                 Console.WriteLine("Disconnect from Server, removes FileData = Q");
 
-                IPEndPoint myHostingIP = new IPEndPoint(IPAddress.Parse(myIPString), myPort);
                 string input = string.Empty;
                 Thread.Sleep(1000);
                 while (true)
@@ -121,7 +130,7 @@ namespace Client
                         case "u":
                         case "U":
                             SocketSendString(master, "UpdateFileServer");
-                            CSendFileInfo(myPort, myIPString, fileNames, filePaths);
+                            CSendFileInfo(myPort, myIP, fileNames, filePaths);
                             Console.WriteLine("Update: Successful Break");
                             break;
                         case "d":
@@ -178,7 +187,7 @@ namespace Client
                             if (DisconnectConfirm == "SendID")
                             {
                                 string stPort = myPort.ToString();
-                                string sendID = String.Concat(myIPString, ";", stPort);
+                                string sendID = String.Concat(myIP, ";", stPort);
                                 SocketSendString(master, sendID);
                             }
                             else
@@ -206,11 +215,13 @@ namespace Client
         {
             //Socket serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             Socket serverSocket;
-            Console.WriteLine("ListenThread Started");
+            Console.WriteLine("Listening On: " + myIP + " \n on Port: " + myPort);
             while (true)
             {
-                listenerSocket.Listen(0);
-                serverSocket = listenerSocket.Accept();
+                hosterSocket.Listen(0);
+
+                serverSocket = hosterSocket.Accept();
+                Console.WriteLine("SERVER\\\\\\SUCCESSFUL ACCEPT");
                 string successRec = Data_Receive2(serverSocket);
                 Console.WriteLine("///////////////////////////////////////////////" + successRec);
                 if(successRec == "RequestingFile")
@@ -315,8 +326,8 @@ namespace Client
 
             ///////////////////////////////////////
             int truePort = int.Parse(hostPort);
-            IPEndPoint hostIPEndPoint = new IPEndPoint(IPAddress.Parse(hostIP), truePort);
-            ReceiverSocket.Connect(hostIPEndPoint);
+            IPEndPoint clientHostIPEndPoint = new IPEndPoint(IPAddress.Parse(hostIP), truePort);
+            ReceiverSocket.Connect(clientHostIPEndPoint);
             /////////////////////////////////////
 
             byte[] Buffer = new Byte[1024];

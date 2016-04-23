@@ -255,11 +255,12 @@ namespace Server
                                 masterDB[fileName] = masterDB[fileName].Distinct().ToList();
                                 
                             }
-                            else if (fileInfo.Item1 != compTuple.Item1 && fileInfo.Item2 == compTuple.Item2 && fileInfo.Item3 != compTuple.Item3)
+                            else if (fileInfo.Item1 != compTuple.Item1 && fileInfo.Item2 != compTuple.Item2 || fileInfo.Item3 != compTuple.Item3)
                             {
                                 if (fileInfo.Item1 != compTuple.Item1)
                                 {
-                                    Console.WriteLine("Different File paths");
+                                    Console.WriteLine("Same Filename, Different Host, Adding");
+                                    masterDB[fileName].Add(fileInfo);
                                 }
                                 else
                                 {
