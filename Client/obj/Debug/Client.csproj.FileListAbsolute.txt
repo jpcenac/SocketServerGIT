@@ -11,3 +11,9 @@ C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Client\bin\De
 C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Client\obj\Debug\Client.exe
 C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Client\obj\Debug\Client.pdb
 C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Client\obj\Debug\Client.csprojResolveAssemblyReference.cache
+C:\GITHUB\SocketServerGIT-master\Client\bin\Debug\Client.exe.config
+C:\GITHUB\SocketServerGIT-master\Client\bin\Debug\Client.exe
+C:\GITHUB\SocketServerGIT-master\Client\bin\Debug\Client.pdb
+C:\GITHUB\SocketServerGIT-master\Client\obj\Debug\Client.csprojResolveAssemblyReference.cache
+C:\GITHUB\SocketServerGIT-master\Client\obj\Debug\Client.exe
+C:\GITHUB\SocketServerGIT-master\Client\obj\Debug\Client.pdb

@@ -12,3 +12,9 @@ C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Server\obj\De
 C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Server\bin\Debug\Server.exe
 C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Server\bin\Debug\Server.pdb
 C:\Users\jpc0759.GAMELAB\Documents\Visual Studio 2013\SocketServer\Server\obj\Debug\Server.csprojResolveAssemblyReference.cache
+C:\GITHUB\SocketServerGIT-master\Server\bin\Debug\Server.exe.config
+C:\GITHUB\SocketServerGIT-master\Server\obj\Debug\Server.exe
+C:\GITHUB\SocketServerGIT-master\Server\obj\Debug\Server.pdb
+C:\GITHUB\SocketServerGIT-master\Server\bin\Debug\Server.exe
+C:\GITHUB\SocketServerGIT-master\Server\bin\Debug\Server.pdb
+C:\GITHUB\SocketServerGIT-master\Server\obj\Debug\Server.csprojResolveAssemblyReference.cache
