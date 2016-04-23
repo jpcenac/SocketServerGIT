@@ -89,7 +89,7 @@ namespace Server
             catch(Exception e)
             {
                 Console.WriteLine(e);
-                return "SHIEEEEEEEEEEEEET";
+                return "NONONONONNONONOOOOOOOOOOOONONOOOOOOOOONOOOOOOOOOO";
             }
             //return clientData.Split(new string[] { "<EOF>" }, StringSplitOptions.None)[0];
         }
@@ -123,74 +123,84 @@ namespace Server
 
             public void ServerFunction()
             {
-                string servControl = string.Empty;
-
-                Console.WriteLine("Client Thread started");
-                //SocketSendString(clientSocket, "You are client: " + filePath);
-                //AcceptFileInfo();
-                Console.WriteLine("Control Flow Begins");
-
-                while(true)
+                try
                 {
-                    servControl = Data_Receive2(clientSocket);
-                    switch(servControl)
+                    string servControl = string.Empty;
+
+                    //Console.WriteLine("Client Thread started");
+                    //SocketSendString(clientSocket, "You are client: " + filePath);
+                    //AcceptFileInfo();
+                    Console.WriteLine("Control Flow Begins");
+
+                    while (true)
                     {
-                        case "RequestFileList":
-                            SendFileInfo();
-                            break;
-
-                        case "UpdateFileServer":
-                            AcceptFileInfo();
-                            break;
-
-                        case "PrintDataBase":
-                            CheckDatabase();
-                            break;
-
-                        case "DownloadFile":
-                            try
-                            {
-                                Tuple<string, string, int> clientInfo;
-                                Console.WriteLine("Server set to Send FileName for Download");
-                                SocketSendString(clientSocket, "SERVER//Type FileName with extension");
-                                string receiveFile = Data_Receive2(clientSocket);
-                                if(masterDB.Keys.Contains(receiveFile))
-                                {
-                                    SocketSendString(clientSocket, "Correct");
-                                clientInfo = CheckFileInfo(receiveFile);
-                                ////Console.WriteLine("File Owner Info: " + clientInfo.Item1.ToString() 
-                                //    + " " + clientInfo.Item2.ToString() + " " 
-                                //    + clientInfo.Item3.ToString());
-
-                                Console.WriteLine("Sending FilePath: " + clientInfo.Item1.ToString());
-                                SocketSendString(clientSocket, clientInfo.Item1.ToString());
-
-                                Console.WriteLine("Sending IP: " + clientInfo.Item2.ToString());
-                                SocketSendString(clientSocket, clientInfo.Item2.ToString());
-
-                                Console.WriteLine("Sending port: " + clientInfo.Item3.ToString());
-                                SocketSendString(clientSocket, clientInfo.Item3.ToString());
-
+                        servControl = Data_Receive2(clientSocket);
+                        switch (servControl)
+                        {
+                            case "RequestFileList":
+                                SendFileInfo();
                                 break;
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Client Entered Incorrect Filename");
-                                    SocketSendString(clientSocket, "Incorrect");
-                                }
-                              
-                            }
-                            catch (Exception e)
-                            {
-                                Console.WriteLine(e);
+
+                            case "UpdateFileServer":
+                                AcceptFileInfo();
                                 break;
-                            }
-                            break;
-                        default:
-                            Console.WriteLine("Default Case");
-                            //SocketSendString(clientSocket, "In Default Case Currently");
-                            break;
+
+                            case "PrintDataBase":
+                                CheckDatabase();
+                                break;
+
+                            case "DownloadFile":
+                                try
+                                {
+                                    Tuple<string, string, int> clientInfo;
+                                    Console.WriteLine("Server set to Send FileName for Download");
+                                    SocketSendString(clientSocket, "SERVER//Type FileName with extension");
+                                    string receiveFile = Data_Receive2(clientSocket);
+                                    if (masterDB.Keys.Contains(receiveFile))
+                                    {
+                                        SocketSendString(clientSocket, "Correct");
+                                        clientInfo = CheckFileInfo(receiveFile);
+                                        string HostInfo = stringifyTuple(clientInfo);
+                                        SocketSendString(clientSocket, HostInfo);
+
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Client Entered Incorrect Filename");
+                                        SocketSendString(clientSocket, "Incorrect");
+                                    }
+
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine(e);
+
+                                    break;
+                                }
+                                break;
+                            case "Disconnecting":
+                                SocketSendString(clientSocket, "SendID");
+                                string receiveHostID = Data_Receive2(clientSocket);
+                                string[] delAr = receiveHostID.Split(';');
+                                string deleteIP = delAr[0];
+                                string deletePort = delAr[1];
+                                RemoveFileInfo(deleteIP, deletePort);
+                                SocketSendString(clientSocket, "RemoveFileInfoSuccess");
+                                clientSocket.Close();
+                                Console.WriteLine("Client Has Disconnected");
+                                Thread.CurrentThread.Abort();
+                                break;
+                            default:
+                                Console.WriteLine("Default Case");
+                                //SocketSendString(clientSocket, "In Default Case Currently");
+                                break;
+                        }
                     }
+                }
+                catch(Exception e)
+                {
+
                 }
             }
 
@@ -274,12 +284,11 @@ namespace Server
                    Console.WriteLine(fn + " :::::::::::: ");
                     foreach(Tuple<string, string, int> tupPrint in masterDB[fn].ToList())
                     {                           
-                        Console.WriteLine(tupPrint.Item1 + ":::" + tupPrint.Item2 + ":::" + tupPrint.Item3);
+                        Console.WriteLine(tupPrint.Item1 + "\n:::" + tupPrint.Item2 + "\n:::" + tupPrint.Item3);
                        
                         Console.WriteLine();
                     }
                 }
-                
             }
 
             public void SendFileInfo()
@@ -287,10 +296,6 @@ namespace Server
                 Console.WriteLine("Request for File List Received");
                 SocketSendString(clientSocket, "SERVER: SendingFileNames");
                 string readyConfirm = Data_Receive2(clientSocket);
-                Console.WriteLine(readyConfirm);
-                SocketSendString(clientSocket, "SendingConfirmed");
-                //string fileCount = masterDB.Count.ToString();
-                //Console.WriteLine(fileCount);
                 string FileList = string.Empty;
                 foreach(string fn in masterDB.Keys)
                 {
@@ -315,9 +320,62 @@ namespace Server
                 }
                 Console.WriteLine("Returning Null");
                 return null;
-                
             }
 
+            public string stringifyTuple(Tuple<string, string, int> cInfo)
+            {
+                string filePath = cInfo.Item1;
+                string ipAddress = cInfo.Item2;
+                string portNum = cInfo.Item3.ToString();
+                string ipAndPort = String.Concat(ipAddress, ";", portNum);
+
+                string allClietInfo = String.Concat(filePath, ";", ipAndPort);
+
+                return allClietInfo;
+            }
+
+            public void RemoveFileInfo(string clientIP, string clientPort)
+            {
+                int clientPortInt = int.Parse(clientPort);
+
+                foreach(string fileName in masterDB.Keys)
+                {
+                    foreach(Tuple<string, string, int> targetTuple in masterDB[fileName])
+                    {
+                        if(targetTuple.Item2 == clientIP && targetTuple.Item3 == clientPortInt)
+                        {
+
+                            if(masterDB[fileName].Count > 1)
+                            {
+                                Console.WriteLine("IP Removed  : " + clientIP);
+                                Console.WriteLine("Port Removed: " + clientPort);
+                                Console.WriteLine("FileName: " + fileName + "Remains");
+                                masterDB[fileName].Remove(targetTuple);
+                                RemoveFileInfo(clientIP, clientPort);
+                                break;
+                            }
+                            else
+                            {
+                                Console.WriteLine("IP Removed  : " + clientIP);
+                                Console.WriteLine("Port Removed: " + clientPort);
+                                Console.WriteLine("Last Host for File, File Removed");
+
+                                masterDB.Remove(fileName);
+                                RemoveFileInfo(clientIP, clientPort);
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
+                        
+                    }
+
+                    break;
+
+                }
+            }
             
         }
     }

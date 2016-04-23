@@ -82,7 +82,7 @@ namespace Client
             try
             {
                 master.Connect(ip);
-                Console.WriteLine("Connection Successful");
+                Console.WriteLine("Connecting from " + myIPString);
             }
             catch
             {
@@ -101,6 +101,7 @@ namespace Client
                 Console.WriteLine("Update your FileInfo to Server = U");
                 Console.WriteLine("Download file from server's Clients = D");
                 Console.WriteLine("Print Serverside the Master Database = P");
+                Console.WriteLine("Disconnect from Server, removes FileData = Q");
 
                 IPEndPoint myHostingIP = new IPEndPoint(IPAddress.Parse(myIPString), myPort);
                 string input = string.Empty;
@@ -135,11 +136,14 @@ namespace Client
                                 SocketSendString(master, fileRequest);
                                 Console.WriteLine("Retriving File Owner");
                                 string confirm = Data_Receive2(master);
+                                
                                 if(confirm == "Correct")
                                 {
-                                    string filePath = Data_Receive2(master);
-                                    string HostIP = Data_Receive2(master);
-                                    string HostPort = Data_Receive2(master);
+                                    string hostdata = Data_Receive2(master);
+                                    string[] HostInfo = ParseFileInfo(hostdata);
+                                    string filePath = HostInfo[0];
+                                    string HostIP = HostInfo[1];
+                                    string HostPort = HostInfo[2];
                                     Console.WriteLine("HostInfo: \n" + filePath + "\n " + HostIP + "\n " + HostPort);
                                     Thread DownloadThread = new Thread(() => DownloadFileFromHost(filePath, HostIP, HostPort, fileRequest));
                                     DownloadThread.Start();
@@ -166,6 +170,27 @@ namespace Client
                         case "P":
                             SocketSendString(master, "PrintDataBase");
                             break;
+
+                        case "q":
+                        case "Q":
+                            SocketSendString(master, "Disconnecting");
+                            string DisconnectConfirm = Data_Receive2(master);
+                            if (DisconnectConfirm == "SendID")
+                            {
+                                string stPort = myPort.ToString();
+                                string sendID = String.Concat(myIPString, ";", stPort);
+                                SocketSendString(master, sendID);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                            string RemoveConfirm = Data_Receive2(master);
+                            Console.WriteLine(RemoveConfirm);
+                            master.Shutdown(SocketShutdown.Both);
+                            master.Close();
+                            Environment.Exit(0);
+                            break;
                         default:
                             Console.WriteLine("Incorrect Input");
                             break;
@@ -175,24 +200,6 @@ namespace Client
             catch { }
 
         }
-
-        //public static void DownloadStuff()
-        //{
-        //    var download = File.Create(Path.Combine(directory, filename.text));
-
-        //    //Console.WriteLine("Starting to receive the file");
-
-        //    // read the file in chunks of 1KB
-        //    var buffer = new byte[1024];
-        //    int bytesRead;
-        //    while ((bytesRead = clientSocket.Receive(buffer)) > 0)
-        //    {
-        //        download.Write(buffer, 0, bytesRead);
-        //    }
-
-        //    download.Close();
-        //}
-
 
         //Listen and Serve File
         public static void ListenThread()
@@ -216,16 +223,11 @@ namespace Client
                     Console.WriteLine("SERVER\\\\SENDING FILESIZE LEN: " + fileData.Length);
                     serverSocket.SendFile(fileToSend);
                     Console.WriteLine("Done Sending");
-                    //string fileConfirm = Data_Receive2(serverSocket);
-                    //Console.WriteLine(fileConfirm);
-                    //if(fileConfirm == "DownloadComplete")
-                    //{
+
                     serverSocket.Shutdown(SocketShutdown.Both);
                     serverSocket.Close();
                     Console.WriteLine("Socket Closed");
-                    //}
-                    
-                    
+
                 }
             }
         }
@@ -290,10 +292,9 @@ namespace Client
         public static void CSReceiveFileInfo()
         {
             string ReceiveConfrim = Data_Receive2(master);
-            Console.WriteLine(ReceiveConfrim);
+            //Console.WriteLine(ReceiveConfrim);
             SocketSendString(master, "Ready");
-            string SendingConfirm = Data_Receive2(master);
-            Console.WriteLine(SendingConfirm);
+
             string fileList = Data_Receive2(master);
             string[] fileNames = fileList.Split(':').ToArray();
             foreach(string fn in fileNames)
@@ -337,8 +338,6 @@ namespace Client
                     Console.WriteLine(" " + bytesRead.ToString() + " " + readCount.ToString());
                     myDownload.Write(Buffer, 0, bytesRead);
                     //myDownload.WriteAsync(Buffer, 0, bytesRead);
-
-                    
                 }
                 myDownload.Close();
                 
@@ -370,10 +369,13 @@ namespace Client
             return fileNames;
         }
 
-        
+        public static string[] ParseFileInfo(string HostInfo)
+        {
+            string[] parsedInfo = HostInfo.Split(';');
+            return parsedInfo;
+        }
 
-
-        //public static string GetFilePath(string fileName)
+        //public static string SendIPandPort(string IP, int Port)
         //{
 
         //}
