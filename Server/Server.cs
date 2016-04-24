@@ -157,7 +157,7 @@ namespace Server
                     string[] clientIPPort = parseClientInfo.Split(';');
                     thisClientIP = clientIPPort[0];
                     thisClientPort = int.Parse(clientIPPort[1]);
-                    Console.WriteLine("Client IP  : " + thisClientIP);
+                    Console.WriteLine("Client IP::: " + thisClientIP);
                     Console.WriteLine("Client Port: " + thisClientPort.ToString());
                     Console.WriteLine("Client Has Connected");
 
@@ -192,7 +192,6 @@ namespace Server
                                         clientInfo = CheckFileInfo(receiveFile);
                                         string HostInfo = stringifyTuple(clientInfo);
                                         SocketSendString(clientSocket, HostInfo);
-
                                         break;
                                     }
                                     else
@@ -219,8 +218,8 @@ namespace Server
 
                             case "UnexpectedDisc":
                                 Console.WriteLine("Socket was most likely Forcibly Removed, Data Receive is being Terminated");
-                                Console.WriteLine("Attempting to Remove Client Info");
-                                Console.WriteLine("C IP  :" + thisClientIP);
+                                Console.WriteLine("Removing Client Info");
+                                Console.WriteLine("C IP:::" + thisClientIP);
                                 Console.WriteLine("C Port: " + thisClientPort.ToString());
                                 RemoveFileInfo(thisClientIP, thisClientPort.ToString());
                                 clientSocket.Shutdown(SocketShutdown.Both);
@@ -236,7 +235,7 @@ namespace Server
                 }
                 catch
                 {
-                    Console.WriteLine("Aborting Thread, Connection to Client Lost");
+                    Console.WriteLine("Aborting ClientThread, Connection to Client Lost");
                     clientSocket.Close();
                     Thread.CurrentThread.Abort();
                     return;
@@ -274,7 +273,7 @@ namespace Server
                     }
                     else
                     {
-                        //REDO THIS JANK ASS CODE FUCK YOU
+                       
                         //Console.WriteLine(fileName);
                         List<Tuple<string, string, int>> dupTupleList = masterDB[fileName];
 
@@ -296,7 +295,7 @@ namespace Server
 
                                     Console.WriteLine("Same Filename, Different Path, Adding");
                                     masterDB[fileName].Add(fileInfo);
-                                    Console.WriteLine("FILEINFO HOSTS: masterDB[fileName].Count.ToString()");
+                                    Console.WriteLine("FILEINFO HOSTS: " + masterDB[fileName].Count().ToString());
                                 }
                                 else
                                 {
@@ -322,11 +321,11 @@ namespace Server
             {
                 foreach (string fn in masterDB.Keys)
                 {
-                    Console.WriteLine("DB has " + masterDB[fn].Count.ToString() + " on Record");
-                    Console.WriteLine(fn + " :::::::::::: ");
+                    Console.WriteLine("DB has " + masterDB[fn].Count.ToString() + " host(s) on Record");
+                    Console.WriteLine(" :::::::::::: " + fn);
                     foreach (Tuple<string, string, int> tupPrint in masterDB[fn].ToList())
                     {
-                        Console.WriteLine(tupPrint.Item1 + "\n:::" + tupPrint.Item2 + "\n:::" + tupPrint.Item3);
+                        Console.WriteLine("FilePath: " + tupPrint.Item1 + "\nIP::::::: " + tupPrint.Item2 + "\nPort:::: " + tupPrint.Item3);
 
                         Console.WriteLine();
                     }
@@ -353,11 +352,25 @@ namespace Server
             {
 
                 Console.WriteLine("FileRequest: " + fileChoice);
-
+                int index = 0;
                 //Console.WriteLine(masterDB[fileChoice] == null?"file does not exist" : "file exists in database");
                 foreach (Tuple<string, string, int> clientTuple in masterDB[fileChoice])
                 {
-                    Console.WriteLine("Returning with Valid Client Info");
+                    Tuple<string, string, int>[] fileNameArr = masterDB[fileChoice].ToArray();
+                    Console.WriteLine("IP:::: " + clientTuple.Item2);
+                    Console.WriteLine("Port:: " + clientTuple.Item3.ToString());
+                    Console.WriteLine("Index: " + fileNameArr[index].ToString());
+                    index += 1;
+                    if (masterDB[fileChoice].Count == 1)
+                    {
+                        Console.WriteLine("Returning with Valid Client Info");
+                        return clientTuple;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Choose Host Index: ");
+                        Console.ReadLine();
+                    }
                     return clientTuple;
                 }
                 Console.WriteLine("Returning Null");
@@ -390,16 +403,16 @@ namespace Server
                             if (masterDB[fileName].Count > 1)
                             {
                                 Console.WriteLine("DB has " + masterDB[fileName].Count.ToString() + " on Record");
-                                Console.WriteLine("Removing IP  : " + clientIP);
+                                Console.WriteLine("Removing IP::: " + clientIP);
                                 Console.WriteLine("Removing Port: " + clientPort);
-                                Console.WriteLine("FileName: " + fileName + " Remains");
+                                Console.WriteLine("FileName: " + fileName + " remains");
                                 masterDB[fileName].Remove(targetTuple);
                                 RemoveFileInfo(clientIP, clientPort);
                                 break;
                             }
                             else
                             {
-                                Console.WriteLine("Removing IP  : " + clientIP);
+                                Console.WriteLine("Removing IP::: " + clientIP);
                                 Console.WriteLine("Removing Port: " + clientPort);
                                 Console.WriteLine("Last Host for File, File Removed");
 

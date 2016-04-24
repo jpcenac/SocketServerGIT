@@ -8,6 +8,7 @@ using System.Net.Sockets;
 using System.IO;
 using System.Threading;
 using System.Windows.Forms;
+using System.Text.RegularExpressions;
 
 
 namespace Client
@@ -65,8 +66,8 @@ namespace Client
 
             //Server Info///////
             Console.Write("Enter server IP: ");
-            string connectIP = "192.168.1.103";
-            //string connectIP = "130.70.82.148";
+           // string connectIP = "192.168.1.103";
+            string connectIP = "130.70.82.148";
             //string connectIP = Console.ReadLine();
             //string connectIP = "127.0.0.1";
             Console.WriteLine(connectIP);
@@ -166,7 +167,7 @@ namespace Client
                                     DownloadThread.Start();
                                     while (DownloadThread.IsAlive)
                                     {
-
+                                        
                                     }
                                 }
                                 else
@@ -219,17 +220,17 @@ namespace Client
                 hosterSocket.Listen(0);
 
                 serverSocket = hosterSocket.Accept();
-                Console.WriteLine("SERVER\\\\\\SUCCESSFUL ACCEPT");
+                Console.WriteLine("HOSTER\\\\\\SUCCESSFUL ACCEPT");
                 string successRec = Data_Receive2(serverSocket);
                 Console.WriteLine("///////////////////////////////////////////////" + successRec);
                 if (successRec == "RequestingFile")
                 {
-                    Console.WriteLine("SERVER\\\\ Successful Request");
+                    Console.WriteLine("HOSTER\\\\ Successful Request");
                     SocketSendString(serverSocket, "RequestAccepted");
                     string fileToSend = Data_Receive2(serverSocket);
                     byte[] fileData = File.ReadAllBytes(fileToSend);
                     //Console.WriteLine("SERVER//Attempting to send file" + fileToSend + " to Client Requester");
-                    Console.WriteLine("SERVER\\\\SENDING FILESIZE LEN: " + fileData.Length);
+                    Console.WriteLine("HOSTER\\\\SENDING FILESIZE LEN: " + fileData.Length);
                     serverSocket.SendFile(fileToSend);
                     Console.WriteLine("Done Sending");
 
@@ -337,8 +338,8 @@ namespace Client
                     //Console.WriteLine(Buffer.ToArray().ToString());
                     totalBytesRead += bytesRead;
                     readCount += 1;
-                    Console.Write(totalBytesRead.ToString() + " ");
-                    Console.WriteLine(" " + bytesRead.ToString() + " " + readCount.ToString());
+                    //Console.Write(totalBytesRead.ToString() + " ");
+                    //Console.WriteLine(" " + bytesRead.ToString() + " " + readCount.ToString());
                     myDownload.Write(Buffer, 0, bytesRead);
                     //myDownload.WriteAsync(Buffer, 0, bytesRead);
                 }
@@ -365,11 +366,25 @@ namespace Client
 
         public static string[] JustFileNames(string hostDirectory)
         {
-            string[] fileNames = Directory.GetFiles(hostDirectory, "*.txt")
-                                     .Select(path => Path.GetFileName(path))
-                                     .ToArray();
+            //string[] fileNames = Directory.GetFiles(hostDirectory, "*.txt")
+            //                         .Select(path => Path.GetFileName(path))
+            //                         .ToArray();
+            string[] filePaths, fileNames;
+            var files = Directory.EnumerateFiles(hostDirectory, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(s => s.EndsWith(".txt") || s.EndsWith(".jpg") || s.EndsWith(".jpeg")).ToArray();
 
-            return fileNames;
+            filePaths = files;
+            fileNames = new string[filePaths.Count()];
+            
+
+            for (int i = 0; i < filePaths.Count(); i++ )
+            {
+                fileNames[i] = Path.GetFileName(filePaths[i]);
+                //fileNames[i].Split(splitPath, 0);
+               // Console.WriteLine(i + ":  "+ fileNames[i]);
+
+            }
+                return fileNames;
         }
 
         public static string[] ParseFileInfo(string HostInfo)
