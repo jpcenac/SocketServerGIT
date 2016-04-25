@@ -63,7 +63,6 @@ namespace Client
 
             //get filename path(necessary for sending information)
 
-
             //Server Info///////
             Console.Write("Enter server IP: ");
            // string connectIP = "192.168.1.103";
@@ -169,6 +168,57 @@ namespace Client
                                     {
                                         
                                     }
+                                }
+                                else if(confirm == "Correct+")
+                                {
+                                    Console.WriteLine("Server Returning with Hosts of File");
+                                    SocketSendString(master, "ConfirmGo");
+                                    string hostListCountSt = Data_Receive2(master);
+                                    Console.WriteLine(hostListCountSt);
+                                    int hostListCount = int.Parse(hostListCountSt);
+                                    string[] indexKVP = new string[hostListCount];
+                                    Dictionary<int, string[]> indexDict = new Dictionary<int, string[]>();
+                                    SocketSendString(master, "RetrieveHosts");
+                                    for(int i = 0; i < hostListCount; i++)
+                                    {
+                                        indexKVP[i] = Data_Receive2(master);
+                                        string[] valueHostInfo = new string[3];
+                                        string entryKVP = indexKVP[i];
+                                        string[] decodeKVP = entryKVP.Split(';');
+                                        int keyHostInfo = int.Parse(decodeKVP[0]);
+                                        indexDict.Add(keyHostInfo, valueHostInfo);
+                                        indexDict[keyHostInfo][0] = decodeKVP[1];
+                                        indexDict[keyHostInfo][1] = decodeKVP[2];
+                                        indexDict[keyHostInfo][2] = decodeKVP[3];
+
+                                        Console.WriteLine("Index::: " + decodeKVP[0] +
+                                                       "\n IP:::::: "+ decodeKVP[2] + 
+                                                       "\n Port:::: " + decodeKVP[3]);
+                                    }
+                                    Console.WriteLine(Data_Receive2(master));
+                                    string IndexChoice = Console.ReadLine();
+
+                                    int intIndex = int.Parse(IndexChoice);
+                                    SocketSendString(master, intIndex.ToString());
+                                    if(intIndex  <= hostListCount)
+                                    {
+                                        string hostFilePath = indexDict[intIndex][0];
+                                        string hostIP = indexDict[intIndex][1];
+                                        string hostPort = indexDict[intIndex][2].ToString();
+                                        Console.WriteLine("HostInfo: \n" + hostFilePath + "\n " + hostIP + "\n " + hostPort);
+                                        Thread DownloadThread = new Thread(() => DownloadFileFromHost(hostFilePath, hostIP, hostPort, fileRequest));
+                                        DownloadThread.Start();
+                                        while (DownloadThread.IsAlive)
+                                        {
+
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("Incorrect Input");
+                                        break;
+                                    }
+
                                 }
                                 else
                                 {

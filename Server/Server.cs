@@ -186,12 +186,29 @@ namespace Server
                                     Console.WriteLine("Server set to Send FileName for Download");
                                     SocketSendString(clientSocket, "SERVER//Type FileName with extension");
                                     string receiveFile = Data_Receive2(clientSocket);
-                                    if (masterDB.Keys.Contains(receiveFile))
+
+                                    if (masterDB.Keys.Contains(receiveFile) & masterDB[receiveFile].Count == 1)
                                     {
                                         SocketSendString(clientSocket, "Correct");
-                                        clientInfo = CheckFileInfo(receiveFile);
+                                        clientInfo = CheckFileInfoSingle(receiveFile);
                                         string HostInfo = stringifyTuple(clientInfo);
                                         SocketSendString(clientSocket, HostInfo);
+                                        break;
+                                    }
+                                    else if (masterDB.Keys.Contains(receiveFile) & masterDB[receiveFile].Count > 1)
+                                    {
+                                        //Console.WriteLine("HELLLLLLLLLLLLLLLLLLLLOOOOOOOOOOOO");
+                                        SocketSendString(clientSocket, "Correct+");
+                                        string continueSt = Data_Receive2(clientSocket);
+                                        Console.WriteLine(continueSt);
+                                        SocketSendString(clientSocket, masterDB[receiveFile].Count().ToString());
+                                        string ConfirmGo = Data_Receive2(clientSocket);
+                                        Console.WriteLine(ConfirmGo);
+                                        //SocketSendString(clientSocket, masterDB[receiveFile].Count().ToString());
+                                       
+                                        CheckFileInfoMult(receiveFile);
+                                        Console.WriteLine("FileRequest Success, Returning to Control Flow");
+
                                         break;
                                     }
                                     else
@@ -348,9 +365,8 @@ namespace Server
                 SocketSendString(clientSocket, FileList);
             }
 
-            public Tuple<string, string, int> CheckFileInfo(string fileChoice)
+            public Tuple<string, string, int> CheckFileInfoSingle(string fileChoice)
             {
-
                 Console.WriteLine("FileRequest: " + fileChoice);
                 int index = 0;
                 //Console.WriteLine(masterDB[fileChoice] == null?"file does not exist" : "file exists in database");
@@ -366,15 +382,36 @@ namespace Server
                         Console.WriteLine("Returning with Valid Client Info");
                         return clientTuple;
                     }
-                    else
-                    {
-                        Console.WriteLine("Choose Host Index: ");
-                        Console.ReadLine();
-                    }
+                    
                     return clientTuple;
                 }
                 Console.WriteLine("Returning Null");
                 return null;
+            }
+
+            public void CheckFileInfoMult(string fileChoice)
+            {
+
+                Console.WriteLine("FileRequest: " + fileChoice);
+                Dictionary<int, Tuple<string, string, int>> indexedTuple = new Dictionary<int, Tuple<string, string, int>>();
+
+                Console.WriteLine("File Hosts Count: " + masterDB[fileChoice].Count);
+                Tuple<string, string, int>[] fileChoiceArray = masterDB[fileChoice].ToArray();
+                string[] serializeTuple = new string[fileChoiceArray.Length];
+                for (int index = 0; index < masterDB[fileChoice].Count; index++)
+                {
+                    string ccIndexIP = String.Concat(index, ";", fileChoiceArray[index].Item1, ";", fileChoiceArray[index].Item2);
+                    string serializeKVP = String.Concat(ccIndexIP, ";", fileChoiceArray[index].Item3.ToString());
+                    Console.WriteLine("Sending: " + serializeKVP) ;
+                    SocketSendString(clientSocket, serializeKVP);
+                    indexedTuple.Add(index, fileChoiceArray[index]);
+                }
+
+                //Console.WriteLine("\\\\////\\\\////\\\\////\\\\////\\\\////\\\\////");
+                SocketSendString(clientSocket, "Choose Index::: ");
+                int indexChoice = int.Parse(Data_Receive2(clientSocket));
+                Console.WriteLine("Client's Index Choicee: " +indexChoice.ToString());
+
             }
 
             public string stringifyTuple(Tuple<string, string, int> cInfo)
