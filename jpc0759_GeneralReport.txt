@@ -1,0 +1,60 @@
+General Report:
+
+James Cenac
+jpc0759
+4/27/2016
+
+Introduction:
+
+This is my general report for my p2p connection manager project. It involves 2 processes, server and client. Will get more indepth later.
+
+
+
+
+Challenges:
+
+I did everything for this project to be lockstep, so there was no asynchronous callbacks for the data flow in the server or client processes.
+This was a hinderence to make because since the data needed to be flowed in lockstep with each socket end, it caused complications unnessecary 
+code.
+
+For byte transmission by sending files and receiving files, needed to check whether or not if the byte array is 0 for the loop to close,
+It would not exit the data receive because if a sendfile is sending a 0 byte array, it would still be looking to receive more, only when a socket
+was closed, the for loop would then exit.
+
+The Dictionary Checking to remove files and adding duplications was a pain, I needed to make sure on the addition of another host on the same file, it would add to the dictionary in a specific manner.
+
+Removing fileInfo/hostInfo from the dictionary would throw multiple exception errors because manipulation of a Dictionary on a foreach would give improper IEnumerable exceptions. I solved this by breaking properly and checking the dictionary.
+
+
+
+
+Implementation Details:
+The implementation is as follows:
+
+A server process hosts an IPEndpoint and binds it to host for incomming/potential clients to connect to. In this event a client does connect, a thread is started for that client specifically, with proper information pertaining to the client. On this client Thread, the connected client will control the thread's Control Flow and tell it what information is wants to either retrieve or update the database of file information and hosts.
+
+There is no control on the client thread by itself, all the control is from the client itself. the client decides to update what he can host and not host, and the client thread will retrieve and proceed to manipulate the database as required. Handling disconnections and unexpected disconnections throw exceptions, so they were handled properly in the switch/case state machine.
+
+As the client is concerned, it is acting much like the server, the client conencts to the server, once a connection is established, the client can then control it's own thread between it and the server, allowing it to update the database of file information, and looking for potential file hosters through the connection manager.
+
+When a connection to the connection manager/server is established, a hosting thread for the client is also made, this is for when a potential downloader/requesting peer wants a file from this hosting client/peer. Both the downloader and hoster need to be on seperate threads in case a client decides to download from itself. And it just handles the sockets flow a lot better when there are threads for each socket connection.
+
+There is a semi handle and clean way when a client unexpected disconnects and then proceeds to remove it's hosting and file information before the client thread of the server closes.
+
+
+
+Experiment resutl:
+
+	All communications are realized through socket programming
+	A host can join the server and inform the centralized server with a unique combination of IP and Port.
+	A host can leave the centralized/connection manager and inform all of its file info to be removed.
+	A host can update its file information from it's hosting directory
+	The connection manager/centralized server allows the filename to have multiple hosts, and when this specific file is requested from a         potential downloader, the server will send all available hosts to download from, and will let the downloader choose which one.
+
+	Using a weighted algorithm was personally unncessecary for the scope of this project, What I did do was give a "least recently hosted         number" so the first person to connect would theoretically be the first person to host that specific file, and the next owner of that file         would be the next hoster. I found this unncessary and rudimentary.
+
+
+
+Conclusion:
+
+	In conclusion, this project was challenging and rewarding because I learned in depth how synchronization would work with sockets. I wish I 		would of had the time to do chord or some sort of distributed system but I did not, sadly. Or at least try the implementation with 		asynchronous control flow.

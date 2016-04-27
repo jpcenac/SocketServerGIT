@@ -335,24 +335,23 @@ namespace Server
                                     Console.WriteLine("Different FilePaths");
                                     Console.ResetColor();
 
-                                    Console.ForegroundColor = ConsoleColor.Blue;
-                                    Console.Write(fileInfo.Item2);
-                                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
-                                    Console.Write("//////");
-                                    Console.ForegroundColor = ConsoleColor.Blue;
+                                    Console.ForegroundColor = ConsoleColor.Green;
+                                    Console.WriteLine("Adding new Host Info to this FileName");
+                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                    Console.Write("FilePath::::::::::::");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(fileInfo.Item1);
+
+                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                    Console.Write("HostIP::::::::::::::");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(fileInfo.Item2);
+
+                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                    Console.Write("HostPort::::::::::::");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
                                     Console.WriteLine(fileInfo.Item3.ToString());
 
-
-                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
-                                    Console.Write(compTuple.Item2);
-                                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
-                                    Console.Write("//////");
-                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
-                                    Console.WriteLine(compTuple.Item3.ToString());
-
-                                    Console.ForegroundColor = ConsoleColor.Yellow;
-
-                                    Console.WriteLine("Adding New HostInfo for Existing File");
                                     masterDB[fileName].Add(fileInfo);
                                     Console.ForegroundColor = ConsoleColor.Green;
                                     Console.Write(fileName);
@@ -362,34 +361,33 @@ namespace Server
                                 }
                                 else
                                 {
-                                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
                                     Console.WriteLine("Different ClientIP and/or ClientPORT");
                                     Console.ResetColor();
 
+                                    Console.ForegroundColor = ConsoleColor.Green;
+                                    
+                                    Console.WriteLine("Adding new Host Info to this FileName");
+                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                    Console.Write("FilePath::::::::::::");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(fileInfo.Item1);
 
-                                    Console.ForegroundColor = ConsoleColor.Blue;
-                                    Console.Write(fileInfo.Item2);
-                                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
-                                    Console.Write("//////");
-                                    Console.ForegroundColor = ConsoleColor.Blue;
+                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                    Console.Write("HostIP::::::::::::::");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(fileInfo.Item2);
+
+                                    Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                    Console.Write("HostPort::::::::::::");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
                                     Console.WriteLine(fileInfo.Item3.ToString());
 
-
-                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
-                                    Console.Write(compTuple.Item2);
-                                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
-                                    Console.Write("//////");
-                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
-                                    Console.WriteLine(compTuple.Item3.ToString());
-
-                                    Console.ForegroundColor = ConsoleColor.Yellow;
-
-                                    Console.WriteLine("Adding new fileInfo to File");
                                     masterDB[fileName].Add(fileInfo);
                                     Console.ForegroundColor = ConsoleColor.Green;
                                     Console.Write(fileName);
                                     Console.ForegroundColor = ConsoleColor.Yellow;
-                                    Console.WriteLine(" host count::" +  masterDB[fileName].Count.ToString() + "\n");
+                                    Console.WriteLine(" has " + masterDB[fileName].Count.ToString() + "Hosts Currently" + "\n");
                                     
                                     Console.ResetColor();
                                     break;

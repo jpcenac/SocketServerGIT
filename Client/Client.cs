@@ -71,24 +71,6 @@ namespace Client
 
             //get filename path(necessary for sending information)
 
-            //Server Info///////
-            Console.ForegroundColor = ConsoleColor.Yellow;
-            Console.Write("Enter server IP: ");
-           
-
-            //Testing IP, quick access
-            string connectIP = "130.70.82.148";
-
-            //For User Input, This should be for Presentation/Simulation
-            //string connectIP = Console.ReadLine();
-
-            //Local Host
-            //string connectIP = "127.0.0.1";
-            Console.ForegroundColor = ConsoleColor.Gray;
-            Console.WriteLine(connectIP);
-            IPEndPoint serverIPEP = new IPEndPoint(IPAddress.Parse(connectIP), 30000);
-            ////////////////////////////////////
-
             //Generates Random port for client
             Random randPort = new Random();
             myPort = randPort.Next(30001, 35000);
@@ -97,6 +79,35 @@ namespace Client
             Console.Write("My Port::::::::::::::: ");
             Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.WriteLine(myPort);
+
+
+            //Server Info///////
+            string connectIP = String.Empty;
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("Enter IP = 0 ////// Use Testing IP(130.82.148) = 9");
+            while(connectIP == String.Empty)
+            {
+                string IPInput = Console.ReadLine();
+                if (IPInput == "0")
+                {
+                    Console.Write("Enter server IP: ");
+                    connectIP = Console.ReadLine();
+                }
+                else if (IPInput == "9")
+                {
+                    connectIP = "130.70.82.148";
+                }
+                else
+                {
+                    Console.WriteLine("Incorrect Input");
+                    
+                }
+            }
+
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine(connectIP);
+            IPEndPoint serverIPEP = new IPEndPoint(IPAddress.Parse(connectIP), 30000);
+            ////////////////////////////////////
 
             //For hosting and Serving Files to Other Clients
             myIP = GetLocalIPAddress();
