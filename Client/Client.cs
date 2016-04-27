@@ -33,51 +33,70 @@ namespace Client
         {
             hDirectory = new FolderBrowserDialog();
             rDirectory = new FolderBrowserDialog();
+            Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("Choose Host Directory");
             if (hDirectory.ShowDialog() == DialogResult.OK)
             {
+                Console.ForegroundColor = ConsoleColor.Gray;
                 hostFolder = hDirectory.SelectedPath;
                 Console.WriteLine("Host Directory: " + hostFolder.ToString());
             }
+
+            Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("Choose Receive Directory");
             if (rDirectory.ShowDialog() == DialogResult.OK)
             {
+                Console.ForegroundColor = ConsoleColor.Gray;
                 receiveFolder = rDirectory.SelectedPath;
                 Console.WriteLine("Receive Directory: " + receiveFolder.ToString());
             }
-            //hostFolder = "C:\\Users\\jpcen\\Desktop\\AAAAAAAA\\Host";
-            //receiveFolder = "C:\\Users\\jpcen\\Desktop\\AAAAAAAA\\Receive";
 
-
+            //Socket for Hosting Files between Peers
             hosterSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+            //Socket for Connection Manager/Server
             master = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
 
             //get filenames and filepaths
             string[] filePaths = Directory.GetFiles(hostFolder);
             string[] fileNames = JustFileNames(hostFolder);
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("Current Files in Directory");
             foreach (string fp in fileNames)
             {
-                Console.WriteLine(fp);
+                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine(":::::" + fp);
             }
 
             //get filename path(necessary for sending information)
 
             //Server Info///////
+            Console.ForegroundColor = ConsoleColor.Yellow;
             Console.Write("Enter server IP: ");
-           // string connectIP = "192.168.1.103";
+           
+
+            //Testing IP, quick access
             string connectIP = "130.70.82.148";
+
+            //For User Input, This should be for Presentation/Simulation
             //string connectIP = Console.ReadLine();
+
+            //Local Host
             //string connectIP = "127.0.0.1";
+            Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine(connectIP);
             IPEndPoint serverIPEP = new IPEndPoint(IPAddress.Parse(connectIP), 30000);
             ////////////////////////////////////
 
-            //Get Port and IP
+            //Generates Random port for client
             Random randPort = new Random();
-            myPort = randPort.Next(30000, 30500);
+            myPort = randPort.Next(30001, 35000);
             //int myPort = 30001;
-            Console.WriteLine("Port: " + myPort);
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.Write("My Port::::::::::::::: ");
+            Console.ForegroundColor = ConsoleColor.DarkCyan;
+            Console.WriteLine(myPort);
 
             //For hosting and Serving Files to Other Clients
             myIP = GetLocalIPAddress();
@@ -94,10 +113,14 @@ namespace Client
             try
             {
                 master.Connect(serverIPEP);
-                Console.WriteLine("Connecting from " + myIP);
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.Write("Connecting from ");
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.WriteLine(myIP);
             }
             catch
             {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("ERROR! Could not connect to host");
 
                 goto Retry;
@@ -109,6 +132,7 @@ namespace Client
                 SocketSendString(master, string.Concat(myIP, ";", myPort.ToString()));
                 //CSendFileInfo(myPort, myIPString, fileNames);
                 //CSendFileInfo(myPort, myIPString, fileNames, filePaths);
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
 
                 Console.WriteLine("Retreive FileInfo from Server = R ");
                 Console.WriteLine("Update your FileInfo to Server = U");
@@ -117,10 +141,10 @@ namespace Client
                 Console.WriteLine("Disconnect from Server, removes FileData = Q");
 
                 string input = string.Empty;
-                Thread.Sleep(1000);
+                Thread.Sleep(500);
                 while (true)
                 {
-
+                    Console.ResetColor();
                     Console.WriteLine("Input: ");
                     input = Console.ReadLine();
                     switch (input)
@@ -129,7 +153,10 @@ namespace Client
                         case "R":
                             SocketSendString(master, "RequestFileList");
                             CSReceiveFileInfo();
-                            Console.WriteLine("Request: Successful Break");
+                            Console.ForegroundColor = ConsoleColor.DarkBlue;
+                            Console.BackgroundColor = ConsoleColor.Green;
+
+                            Console.WriteLine("Request Successful////RETURNING");
                             break;
                         case "u":
                         case "U":
@@ -138,8 +165,12 @@ namespace Client
                             string[] newfilePaths = Directory.GetFiles(hostFolder);
                             string[] newfileNames = JustFileNames(hostFolder);
                             SocketSendString(master, "UpdateFileServer");
+
                             CSendFileInfo(myPort, myIP, newfileNames, newfilePaths);
-                            Console.WriteLine("Update: Successful Break");
+
+                            Console.ForegroundColor = ConsoleColor.DarkBlue;
+                            Console.BackgroundColor = ConsoleColor.Green;
+                            Console.WriteLine("Update Successful////RETURNING");
                             break;
                         case "d":
                         case "D":
@@ -147,10 +178,12 @@ namespace Client
                             {
                                 SocketSendString(master, "DownloadFile");
                                 string output = Data_Receive2(master);
+                                Console.ForegroundColor = ConsoleColor.Gray;
                                 Console.WriteLine(output);
                                 string fileRequest = Console.ReadLine();
 
                                 SocketSendString(master, fileRequest);
+                                Console.ForegroundColor = ConsoleColor.Yellow;
                                 Console.WriteLine("Retriving File Owner");
                                 string confirm = Data_Receive2(master);
 
@@ -175,10 +208,26 @@ namespace Client
                                     SocketSendString(master, "ConfirmGo");
                                     string hostListCountSt = Data_Receive2(master);
                                     Console.WriteLine(hostListCountSt);
+
+
                                     int hostListCount = int.Parse(hostListCountSt);
                                     string[] indexKVP = new string[hostListCount];
                                     Dictionary<int, string[]> indexDict = new Dictionary<int, string[]>();
+
+
                                     SocketSendString(master, "RetrieveHosts");
+                                    Console.ForegroundColor = ConsoleColor.Cyan;
+                                    Console.Write("MYIP:::::::::: ");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(myIP);
+
+
+                                    Console.ForegroundColor = ConsoleColor.Cyan;
+                                    Console.Write("MYPORT:::::::: ");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(myPort.ToString());
+
+
                                     for(int i = 0; i < hostListCount; i++)
                                     {
                                         indexKVP[i] = Data_Receive2(master);
@@ -190,10 +239,43 @@ namespace Client
                                         indexDict[keyHostInfo][0] = decodeKVP[1];
                                         indexDict[keyHostInfo][1] = decodeKVP[2];
                                         indexDict[keyHostInfo][2] = decodeKVP[3];
+                                        if(myIP != indexDict[keyHostInfo][0] 
+                                            && myPort.ToString() != indexDict[keyHostInfo][2])
+                                        {
+                                            Console.ForegroundColor = ConsoleColor.Green;
+                                            Console.Write("FILE INDEX:::::::: ");
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.WriteLine(decodeKVP[0]);
 
-                                        Console.WriteLine("Index::: " + decodeKVP[0] +
-                                                       "\n IP:::::: "+ decodeKVP[2] + 
-                                                       "\n Port:::: " + decodeKVP[3]);
+                                            Console.ForegroundColor = ConsoleColor.Green;
+                                            Console.Write(" HostIP::::::::: ");
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.WriteLine(decodeKVP[2]);
+
+                                            Console.ForegroundColor = ConsoleColor.Green;
+                                            Console.Write(" HostPORT::::::: ");
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.WriteLine(decodeKVP[3] + "\n");
+                                        }
+                                        else
+                                        {
+                                            Console.ForegroundColor = ConsoleColor.Green;
+                                            Console.Write("FILE INDEX:::::::: ");
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.WriteLine(decodeKVP[0]);
+
+                                            Console.ForegroundColor = ConsoleColor.DarkGray;
+                                            Console.Write(" myIP::::::::::: ");
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.WriteLine(decodeKVP[2]);
+
+                                            Console.ForegroundColor = ConsoleColor.DarkGray;
+                                            Console.Write(" myPORT::::::::: ");
+                                            Console.ForegroundColor = ConsoleColor.DarkGreen;
+                                            Console.WriteLine(decodeKVP[3] + "\n");
+                                        }
+
+
                                     }
                                     Console.WriteLine(Data_Receive2(master));
                                     string IndexChoice = Console.ReadLine();
@@ -241,12 +323,13 @@ namespace Client
 
                         case "q":
                         case "Q":
+                            Console.WriteLine("Disconnecting");
                             SocketSendString(master, "Disconnecting");
                             string RemoveConfirm = Data_Receive2(master);
                             Console.WriteLine(RemoveConfirm);
                             master.Shutdown(SocketShutdown.Both);
                             master.Close();
-                            Thread.Sleep(3000);
+                            Thread.Sleep(1000);
                             Environment.Exit(0);
                             break;
                         default:
@@ -264,12 +347,13 @@ namespace Client
         {
             //Socket serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             Socket serverSocket;
-            Console.WriteLine("Listening On: " + myIP + " \n on Port: " + myPort);
+
             while (true)
             {
                 hosterSocket.Listen(0);
 
                 serverSocket = hosterSocket.Accept();
+                Console.ForegroundColor = ConsoleColor.DarkGreen;
                 Console.WriteLine("HOSTER\\\\\\SUCCESSFUL ACCEPT");
                 string successRec = Data_Receive2(serverSocket);
                 Console.WriteLine("///////////////////////////////////////////////" + successRec);
@@ -287,6 +371,8 @@ namespace Client
                     serverSocket.Shutdown(SocketShutdown.Both);
                     serverSocket.Close();
                     Console.WriteLine("Socket Closed");
+                    Console.ResetColor();
+                    Console.WriteLine("Input: ");
 
                 }
             }
@@ -351,8 +437,11 @@ namespace Client
 
             string fileList = Data_Receive2(master);
             string[] fileNames = fileList.Split(':').ToArray();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Server has available::");
             foreach (string fn in fileNames)
             {
+                Console.ForegroundColor = ConsoleColor.Gray;
                 Console.WriteLine(fn);
             }
 
@@ -362,10 +451,16 @@ namespace Client
         {
             Socket ReceiverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             var myDownload = File.Create(Path.Combine(receiveFolder, fileName));
-
-            Console.WriteLine("DOWNLAODER//SERVERS'S FILEPATH: " + filePath);
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.Write("DOWNLAODER//HOSTER'S FILEPATH::: ");
+            Console.ForegroundColor = ConsoleColor.DarkBlue;
+            Console.WriteLine(filePath);
             Directory.SetCurrentDirectory(receiveFolder);
-            Console.WriteLine("DOWNLOADER/////MY RECEIVE PATH: " + Directory.GetCurrentDirectory());
+
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.Write("DOWNLOADER/////MY RECEIVE PATH:: ");
+            Console.ForegroundColor = ConsoleColor.DarkBlue;
+            Console.WriteLine(Directory.GetCurrentDirectory());
 
             ///////////////////////////////////////
             int truePort = int.Parse(hostPort);
@@ -394,7 +489,8 @@ namespace Client
                     //myDownload.WriteAsync(Buffer, 0, bytesRead);
                 }
                 myDownload.Close();
-
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine("RECEIVING THREAD CLOSING");
                 Thread.CurrentThread.Abort();
                 /*SocketSendString(ReceiverSocket, "DownloadCompleted");*/
             }

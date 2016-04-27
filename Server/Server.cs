@@ -25,17 +25,16 @@ namespace Server
 
             listenerSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
-            //IPAddress = System.Net.IPAddress.Parse(Server);
             IPEndPoint serverIP = new IPEndPoint(IPAddress.Parse(GetLocalIPAddress()), 30000);
             listenerSocket.Bind(serverIP);
-            Console.WriteLine(serverIP.ToString());
+            Console.WriteLine(serverIP.ToString() + "\n Server Port:: " + "30000");
 
             Thread listenThread = new Thread(ListenThread);
 
             listenThread.Start();
         }
 
-        //listener: listens for clients
+        //listener: listens for clients to upload their host info to become peers
         static void ListenThread()
         {
             while (true)
@@ -54,10 +53,10 @@ namespace Server
                 input = input + "<EOF>";
                 inSock.Send(Encoding.ASCII.GetBytes(input));
             }
-            catch (Exception e)
+            catch
             {
 
-                Console.WriteLine(e);
+                Console.WriteLine("Error Occured...Unable to send String");
             }
         }
 
@@ -126,28 +125,6 @@ namespace Server
                 clientThread.Start();
             }
 
-            //public void OnReceive(IAsyncResult result)
-            //{
-            //    try
-            //    {
-            //        var bytesReceived = this.clientSocket.EndReceive(result);
-
-            //        if (bytesReceived <= 0)
-            //        {
-            //            // normal disconnect
-            //            return;
-            //        }
-
-            //        // ...
-
-            //        //this.Socket.BeginReceive...;
-            //    }
-            //    catch // SocketException
-            //    {
-            //        // abnormal disconnect
-            //    }
-            //}
-
             public void ServerFunction()
             {
                 try
@@ -157,9 +134,11 @@ namespace Server
                     string[] clientIPPort = parseClientInfo.Split(';');
                     thisClientIP = clientIPPort[0];
                     thisClientPort = int.Parse(clientIPPort[1]);
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
                     Console.WriteLine("Client IP::: " + thisClientIP);
                     Console.WriteLine("Client Port: " + thisClientPort.ToString());
                     Console.WriteLine("Client Has Connected");
+                    Console.ResetColor();
 
                     while (true)
                     {
@@ -168,15 +147,31 @@ namespace Server
                         {
                             case "RequestFileList":
                                 SendFileInfo();
+                                Console.ForegroundColor = ConsoleColor.Blue;
+                                Console.BackgroundColor = ConsoleColor.White;
+                             
+                                Console.WriteLine("Sent all Current File Information...Returning");
+                                Console.ResetColor();
+
                                 break;
 
                             case "UpdateFileServer":
                                 RemoveFileInfo(thisClientIP, thisClientPort.ToString());
+                                
                                 AcceptFileInfo();
+                                Console.ForegroundColor = ConsoleColor.Blue;
+                                Console.BackgroundColor = ConsoleColor.White;
+                                Console.WriteLine("FileServer Updated HostInfo...Returning");
+                                Console.ResetColor();
                                 break;
 
                             case "PrintDataBase":
                                 CheckDatabase();
+                                Console.ForegroundColor = ConsoleColor.Blue;
+                                Console.BackgroundColor = ConsoleColor.White;
+                            
+                                Console.WriteLine("Entire Server DataBase Printed...Returning");
+                                Console.ResetColor();
                                 break;
 
                             case "DownloadFile":
@@ -193,18 +188,18 @@ namespace Server
                                         clientInfo = CheckFileInfoSingle(receiveFile);
                                         string HostInfo = stringifyTuple(clientInfo);
                                         SocketSendString(clientSocket, HostInfo);
+                                        Console.WriteLine("FileRequest Success, Returning to Control Flow");
                                         break;
                                     }
                                     else if (masterDB.Keys.Contains(receiveFile) & masterDB[receiveFile].Count > 1)
                                     {
-                                        //Console.WriteLine("HELLLLLLLLLLLLLLLLLLLLOOOOOOOOOOOO");
+                                       
                                         SocketSendString(clientSocket, "Correct+");
                                         string continueSt = Data_Receive2(clientSocket);
                                         Console.WriteLine(continueSt);
                                         SocketSendString(clientSocket, masterDB[receiveFile].Count().ToString());
                                         string ConfirmGo = Data_Receive2(clientSocket);
                                         Console.WriteLine(ConfirmGo);
-                                        //SocketSendString(clientSocket, masterDB[receiveFile].Count().ToString());
                                        
                                         CheckFileInfoMult(receiveFile);
                                         Console.WriteLine("FileRequest Success, Returning to Control Flow");
@@ -213,32 +208,36 @@ namespace Server
                                     }
                                     else
                                     {
-                                        Console.WriteLine("Client Entered Incorrect Filename");
+                                        Console.WriteLine("Client Entered Incorrect Filename or Error Occured");
                                         SocketSendString(clientSocket, "Incorrect");
                                     }
 
                                 }
-                                catch (Exception e)
+                                catch 
                                 {
-                                    Console.WriteLine(e);
+                                    Console.WriteLine("Error Occured Between Client server, Returning Unsuccessfully");
                                     break;
                                 }
                                 break;
                             case "Disconnecting":
-
+                                Console.WriteLine("User is Disconnecting, removing their Host Info");
                                 RemoveFileInfo(thisClientIP, thisClientPort.ToString());
+                                Thread.Sleep(1000);
                                 SocketSendString(clientSocket, "RemoveFileInfoSuccess");
                                 clientSocket.Close();
-                                Console.WriteLine("Client Has Disconnected");
+                                Console.WriteLine("Client at" +  thisClientIP + " Has Disconnected");
+                                Console.WriteLine("WAWRNING:::::::Aborting Client Thread:::::::WARNING", Console.ForegroundColor = ConsoleColor.Red);
                                 Thread.CurrentThread.Abort();
                                 break;
 
                             case "UnexpectedDisc":
-                                Console.WriteLine("Socket was most likely Forcibly Removed, Data Receive is being Terminated");
-                                Console.WriteLine("Removing Client Info");
+                                Console.ForegroundColor = ConsoleColor.Red;
+                                Console.WriteLine("ERROR!!::Socket was Probably Removed Forcibly");
+                                Console.WriteLine("::::::Attempting to Removing Client Info::::::");
                                 Console.WriteLine("C IP:::" + thisClientIP);
                                 Console.WriteLine("C Port: " + thisClientPort.ToString());
                                 RemoveFileInfo(thisClientIP, thisClientPort.ToString());
+                                Thread.Sleep(1000);
                                 clientSocket.Shutdown(SocketShutdown.Both);
                                 clientSocket.Close();
                                 Thread.CurrentThread.Abort();
@@ -252,6 +251,8 @@ namespace Server
                 }
                 catch
                 {
+                    //Console.WriteLine(e);
+                    SocketSendString(clientSocket, "ErrorOccured");
                     Console.WriteLine("Aborting ClientThread, Connection to Client Lost");
                     clientSocket.Close();
                     Thread.CurrentThread.Abort();
@@ -261,7 +262,7 @@ namespace Server
 
             public void AcceptFileInfo()
             {
-
+               
                 string fileCountString = Data_Receive2(clientSocket);
 
                 int fileCount = int.Parse(fileCountString);
@@ -282,11 +283,31 @@ namespace Server
                     if (!masterDB.ContainsKey(fileName))
                     {
                         fileInfoList.Clear();
-                        Console.WriteLine("Adding " + fileName + " to Master Database");
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine("NEW FILE::Adding " + fileName + " to Server Database");
+                        Console.ResetColor();
 
-                        Console.WriteLine(fileName + ": " + fileInfo.Item1 + " " + fileInfo.Item2 + " " + fileInfo.Item3.ToString());
+                        //Console.WriteLine(fileName + ": " + fileInfo.Item1 
+                        //    + "\nIP:: " + fileInfo.Item2 
+                        //    + "\nPort:: " + fileInfo.Item3.ToString());
+                        Console.WriteLine("HOST INFO:::::::::::::::::::::::::");
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("FilePath:: ");
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
+                        Console.WriteLine(fileInfo.Item1);
+
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("PeerIP:::: ");
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
+                        Console.WriteLine(fileInfo.Item2);
+
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write("PeerPort:: ");
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
+                        Console.WriteLine(fileInfo.Item3.ToString());
                         fileInfoList.Add(fileInfo);
                         masterDB.Add(fileName, fileInfoList);
+                        Console.ResetColor();
                     }
                     else
                     {
@@ -299,29 +320,79 @@ namespace Server
 
                             if (fileInfo.Item1 == compTuple.Item1 && fileInfo.Item2 == compTuple.Item2 && fileInfo.Item3 == compTuple.Item3)
                             {
+                                Console.ForegroundColor = ConsoleColor.Red;
                                 Console.WriteLine("Duplicate File Found");
                                 masterDB[fileName] = masterDB[fileName].Distinct().ToList();
+                                Console.ForegroundColor = ConsoleColor.White;
 
                             }
                             else if (fileInfo.Item1 != compTuple.Item1 & fileInfo.Item2 != compTuple.Item2 || fileInfo.Item3 != compTuple.Item3)
+                            //if(!masterDB[fileName].Contains(compTuple))
                             {
                                 if (fileInfo.Item1 != compTuple.Item1)
                                 {
-                                    Console.WriteLine(fileInfo.Item2 + " /// " + compTuple.Item2);
-                                    Console.WriteLine(fileInfo.Item3.ToString() + " /// " + compTuple.Item3.ToString());
+                                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                                    Console.WriteLine("Different FilePaths");
+                                    Console.ResetColor();
 
-                                    Console.WriteLine("Same Filename, Different Path, Adding");
+                                    Console.ForegroundColor = ConsoleColor.Blue;
+                                    Console.Write(fileInfo.Item2);
+                                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                                    Console.Write("//////");
+                                    Console.ForegroundColor = ConsoleColor.Blue;
+                                    Console.WriteLine(fileInfo.Item3.ToString());
+
+
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.Write(compTuple.Item2);
+                                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                                    Console.Write("//////");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(compTuple.Item3.ToString());
+
+                                    Console.ForegroundColor = ConsoleColor.Yellow;
+
+                                    Console.WriteLine("Adding New HostInfo for Existing File");
                                     masterDB[fileName].Add(fileInfo);
-                                    Console.WriteLine("FILEINFO HOSTS: " + masterDB[fileName].Count().ToString());
+                                    Console.ForegroundColor = ConsoleColor.Green;
+                                    Console.Write(fileName);
+                                    Console.ForegroundColor = ConsoleColor.Yellow;
+                                    Console.WriteLine(" host count::" + masterDB[fileName].Count.ToString() + "\n");
+                                    break;
                                 }
                                 else
                                 {
-                                    Console.WriteLine(fileInfo.Item2 + " /// " + compTuple.Item2);
-                                    Console.WriteLine(fileInfo.Item3.ToString() + " /// " + compTuple.Item3.ToString());
+                                    Console.ForegroundColor = ConsoleColor.DarkRed;
+                                    Console.WriteLine("Different ClientIP and/or ClientPORT");
+                                    Console.ResetColor();
+
+
+                                    Console.ForegroundColor = ConsoleColor.Blue;
+                                    Console.Write(fileInfo.Item2);
+                                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                                    Console.Write("//////");
+                                    Console.ForegroundColor = ConsoleColor.Blue;
+                                    Console.WriteLine(fileInfo.Item3.ToString());
+
+
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.Write(compTuple.Item2);
+                                    Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                                    Console.Write("//////");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(compTuple.Item3.ToString());
+
+                                    Console.ForegroundColor = ConsoleColor.Yellow;
 
                                     Console.WriteLine("Adding new fileInfo to File");
                                     masterDB[fileName].Add(fileInfo);
-                                    Console.WriteLine("FILEINFO HOSTS:" +  masterDB[fileName].Count.ToString());
+                                    Console.ForegroundColor = ConsoleColor.Green;
+                                    Console.Write(fileName);
+                                    Console.ForegroundColor = ConsoleColor.Yellow;
+                                    Console.WriteLine(" host count::" +  masterDB[fileName].Count.ToString() + "\n");
+                                    
+                                    Console.ResetColor();
+                                    break;
                                 }
 
                             }
@@ -338,11 +409,27 @@ namespace Server
             {
                 foreach (string fn in masterDB.Keys)
                 {
-                    Console.WriteLine("DB has " + masterDB[fn].Count.ToString() + " host(s) on Record");
-                    Console.WriteLine(" :::::::::::: " + fn);
+                    Console.ForegroundColor = ConsoleColor.Green;                    
+                    Console.WriteLine("DB has " + masterDB[fn].Count.ToString() + " host(s) on Record for");
+                    Console.Write("::::::::::::::::::::::::::::::::: ");
+                    PrintCyan(fn);
+                    Console.WriteLine();
                     foreach (Tuple<string, string, int> tupPrint in masterDB[fn].ToList())
                     {
-                        Console.WriteLine("FilePath: " + tupPrint.Item1 + "\nIP::::::: " + tupPrint.Item2 + "\nPort:::: " + tupPrint.Item3);
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write(" FilePath:: ");
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
+                        Console.WriteLine(tupPrint.Item1);
+
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write(" PeerIP:::: ");
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
+                        Console.WriteLine(tupPrint.Item2);
+
+                        Console.ForegroundColor = ConsoleColor.Cyan;
+                        Console.Write(" PeerPort:: ");
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
+                        Console.WriteLine(tupPrint.Item3.ToString());
 
                         Console.WriteLine();
                     }
@@ -355,13 +442,21 @@ namespace Server
                 SocketSendString(clientSocket, "SERVER: SendingFileNames");
                 string readyConfirm = Data_Receive2(clientSocket);
                 string FileList = string.Empty;
-                foreach (string fn in masterDB.Keys)
+                if(masterDB.Keys.Count > 0 )
                 {
-                    //Console.WriteLine("Sending: " + fn);
-                    FileList = FileList + string.Concat(fn, ":");
+                    foreach (string fn in masterDB.Keys)
+                    {
+                        //Console.WriteLine("Sending: " + fn);
+                        FileList = FileList + string.Concat(fn, ":");
 
+                    }
                 }
-                Console.WriteLine(FileList);
+                else
+                {
+                    FileList = "Server has no FileNames in Database currently";
+                }
+               
+                //Console.WriteLine(FileList);
                 SocketSendString(clientSocket, FileList);
             }
 
@@ -405,6 +500,7 @@ namespace Server
                     Console.WriteLine("Sending: " + serializeKVP) ;
                     SocketSendString(clientSocket, serializeKVP);
                     indexedTuple.Add(index, fileChoiceArray[index]);
+                    Thread.Sleep(100);
                 }
 
                 //Console.WriteLine("\\\\////\\\\////\\\\////\\\\////\\\\////\\\\////");
@@ -429,45 +525,92 @@ namespace Server
             public void RemoveFileInfo(string clientIP, string clientPort)
             {
                 int clientPortInt = int.Parse(clientPort);
-
-                foreach (string fileName in masterDB.Keys)
-                {
-                    foreach (Tuple<string, string, int> targetTuple in masterDB[fileName])
+                    foreach (string fileName in masterDB.Keys)
                     {
-                        if (targetTuple.Item2 == clientIP && targetTuple.Item3 == clientPortInt)
-                        {
+                        List<Tuple<string, string, int>> copyList = masterDB[fileName];
 
-                            if (masterDB[fileName].Count > 1)
+                        foreach (Tuple<string, string, int> targetTuple in copyList)
+                        {
+                            //Console.WriteLine("REMOVING HOST FROM LIST FOR FILE:::::::: " + fileName);
+
+                            if (targetTuple.Item2 == clientIP && targetTuple.Item3 == clientPortInt)
                             {
-                                Console.WriteLine("DB has " + masterDB[fileName].Count.ToString() + " on Record");
-                                Console.WriteLine("Removing IP::: " + clientIP);
-                                Console.WriteLine("Removing Port: " + clientPort);
-                                Console.WriteLine("FileName: " + fileName + " remains");
-                                masterDB[fileName].Remove(targetTuple);
-                                RemoveFileInfo(clientIP, clientPort);
-                                break;
+
+                                if (masterDB[fileName].Count > 1)
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Green;
+                                    Console.WriteLine("DB has " + masterDB[fileName].Count.ToString() + " on Record");
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.Write(" REMOVING");
+                                    Console.ForegroundColor = ConsoleColor.Cyan;
+                                    Console.Write(" IP::::: ");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(clientIP);
+
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.Write(" REMOVING");
+                                    Console.ForegroundColor = ConsoleColor.Cyan;
+                                    Console.Write(" PORT::: ");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(clientPort);
+
+                                    Console.ForegroundColor = ConsoleColor.Green;
+
+                                    Console.WriteLine("FileName: " + fileName + " remains");
+                                    masterDB[fileName].Remove(targetTuple);
+                                    //RemoveFileInfo(clientIP, clientPort);
+                                    Console.ResetColor();
+                                    break;
+
+                                }
+                                else
+                                {
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine("FILENAME::::::::::: " + fileName);
+                                    Console.Write(" REMOVING");
+                                    Console.ForegroundColor = ConsoleColor.Cyan;
+                                    Console.Write(" IP::::: ");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(clientIP);
+
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.Write(" REMOVING");
+                                    Console.ForegroundColor = ConsoleColor.Cyan;
+                                    Console.Write(" PORT::: ");
+                                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                                    Console.WriteLine(clientPort);
+
+
+                                    Console.ForegroundColor = ConsoleColor.Red;
+                                    Console.WriteLine("Last Host for this File Removed, " + fileName + " Removed from DataBase \n \n");
+
+                                    masterDB.Remove(fileName);
+                                    RemoveFileInfo(clientIP, clientPort);
+                                    Console.ResetColor();
+                                    
+                                }
+
                             }
                             else
                             {
-                                Console.WriteLine("Removing IP::: " + clientIP);
-                                Console.WriteLine("Removing Port: " + clientPort);
-                                Console.WriteLine("Last Host for File, File Removed");
-
-                                masterDB.Remove(fileName);
-                                RemoveFileInfo(clientIP, clientPort);
-                                break;
+                                //Console.WriteLine("IP and Port DO NOT MATCH, CONTINUING ");
                             }
                         }
-                        else
-                        {
-                            break;
-                        }
 
-                    }
-
-                    break;
+                        
 
                 }
+                    
+                
+            }
+
+            public string PrintCyan(string input)
+            {
+                
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine(input);
+                Console.ResetColor();
+                return input;
             }
 
         }
